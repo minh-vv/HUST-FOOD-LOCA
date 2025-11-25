@@ -1,25 +1,10 @@
-import { useEffect, useState } from "react";
-import { getUsers } from "./api";
+import { Routes, Route } from "react-router-dom";
+import AuthPage from "./pages/AuthPage";
 
-function App() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    getUsers().then(setUsers);
-  }, []);
-
+export default function App() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-indigo-600 mb-4">Danh sách User</h1>
-      <ul className="space-y-2">
-        {users.map(u => (
-          <li key={u.id} className="p-3 bg-white rounded shadow">
-            {u.email}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Routes>
+      <Route path="/" element={<AuthPage />} />
+    </Routes>
   );
 }
-
-export default App;
