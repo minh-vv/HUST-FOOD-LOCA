@@ -26,8 +26,24 @@ model User {
   reviews           Review[]
   favorites         UserFavorite[]
   saved             UserSaved[]
+  resetTokens       PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id         Int       @id @default(autoincrement())
+  token      String    @unique @db.VarChar(255)
+  user_id    Int
+  expires_at DateTime
+  used       Boolean   @default(false)
+  created_at DateTime  @default(now())
+  used_at    DateTime?
+
+  user       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
 }
 
 model UserAllergy {

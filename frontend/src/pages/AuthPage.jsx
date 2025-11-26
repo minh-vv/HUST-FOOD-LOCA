@@ -2,8 +2,10 @@ import { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import RegisterForm from "../components/RegisterForm";
 
+
 export default function AuthPage() {
   const [tab, setTab] = useState("login");
+
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gray-100 p-10">
@@ -12,25 +14,26 @@ export default function AuthPage() {
           ハスト・フード・ロカ
         </div>
 
+
         <div className="flex justify-around border-b pb-2 mb-6 text-lg">
           <button
-            className={`pb-1 ${
-              tab === "login" ? "text-blue-600 font-bold" : "text-gray-500"
-            }`}
+            className={`pb-1 ${tab === "login" ? "text-blue-600 font-bold" : "text-gray-500"
+              }`}
             onClick={() => setTab("login")}
           >
             ログイン
           </button>
 
+
           <button
-            className={`pb-1 ${
-              tab === "register" ? "text-blue-600 font-bold" : "text-gray-500"
-            }`}
+            className={`pb-1 ${tab === "register" ? "text-blue-600 font-bold" : "text-gray-500"
+              }`}
             onClick={() => setTab("register")}
           >
             登録
           </button>
         </div>
+
 
         {tab === "login" && <LoginForm />}
         {tab === "register" && <RegisterForm />}
