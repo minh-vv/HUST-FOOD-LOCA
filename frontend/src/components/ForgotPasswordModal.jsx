@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { API_URL } from "../api";
 
 
 export default function ForgotPasswordModal({ onClose }) {
     const [email, setEmail] = useState("");
     const [error, setError] = useState("");
     const [sent, setSent] = useState(false);
+    const [loading, setLoading] = useState(false);
 
 
     const validate = () => {
@@ -21,16 +23,30 @@ export default function ForgotPasswordModal({ onClose }) {
     };
 
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
 
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch(`${API_URL}/auth/forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
 
-        // ここでAPIにメールアドレスを送り、リセット用リンクを発行する想定
-        // await api.post("/auth/forgot-password", { email });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "送信に失敗しました。");
+            }
 
-
-        setSent(true);
+            setSent(true);
+        } catch (err) {
+            setError(err.message || "送信に失敗しました。");
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -56,6 +72,7 @@ export default function ForgotPasswordModal({ onClose }) {
                                     placeholder="メールアドレス"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    disabled={loading}
                                     className={`w-full p-3 border rounded-lg text-base sm:text-lg ${error ? "border-red-500" : ""
                                         }`}
                                 />
@@ -78,9 +95,10 @@ export default function ForgotPasswordModal({ onClose }) {
                                 </button>
                                 <button
                                     type="submit"
+                                    disabled={loading}
                                     className="w-full sm:w-auto px-4 py-2 rounded-lg bg-orange-200 hover:bg-orange-300 transition text-sm sm:text-base"
                                 >
-                                    メールを送信
+                                    {loading ? "送信中..." : "メールを送信"}
                                 </button>
                             </div>
                         </form>
