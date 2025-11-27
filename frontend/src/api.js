@@ -14,7 +14,7 @@ export async function register(userData) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Đăng ký thất bại");
+    throw new Error(data.message || "登録に失敗しました");
   }
 
   return data;
@@ -32,7 +32,7 @@ export async function login(credentials) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Đăng nhập thất bại");
+    throw new Error(data.message || "ログインに失敗しました");
   }
 
   return data;
@@ -48,7 +48,7 @@ export async function getProfile(token) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Lấy thông tin người dùng thất bại");
+    throw new Error(data.message || "ユーザー情報の取得に失敗しました");
   }
 
   return data;
@@ -61,7 +61,7 @@ export async function verifyResetToken(token) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Token verification failed");
+    throw new Error(data.message || "トークンの検証に失敗しました");
   }
 
   return data;
@@ -77,7 +77,7 @@ export async function resetPassword(payload) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Reset password failed");
+    throw new Error(data.message || "パスワードのリセットに失敗しました");
   }
 
   return data;

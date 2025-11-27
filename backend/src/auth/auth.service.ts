@@ -159,13 +159,12 @@ export class AuthService {
   async requestPasswordReset(dto: ForgotPasswordDto): Promise<{ message: string }> {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
-    // Always return success response to avoid account enumeration.
+    if (!user) {
+      throw new BadRequestException('該当するメールアドレスが見つかりません。');
+    }
+
     const genericMessage =
       'パスワード再設定の案内をメールで送信しました。メールをご確認ください。';
-
-    if (!user) {
-      return { message: genericMessage };
-    }
 
     const token = crypto.randomBytes(32).toString('hex');
     const ttlMinutes = Number(process.env.RESET_TOKEN_TTL_MIN ?? 30);
