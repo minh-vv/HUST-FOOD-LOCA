@@ -9,6 +9,7 @@ export default function HomePage() {
   const [trendMenus, setTrendMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
   useEffect(() => {
     fetchHomeData();
   }, []);
@@ -59,7 +60,7 @@ export default function HomePage() {
             onClick={fetchHomeData}
             className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
           >
-            Thử lại
+            再試行
           </button>
         </div>
       </div>
@@ -244,7 +245,7 @@ function MenuCard({ dish, restaurant, imageUrl, price }) {
       </div>
       <p className="mt-2 text-sm font-medium truncate">{dish}</p>
       <p className="text-xs text-gray-600 truncate">{restaurant}</p>
-      {price && <p className="text-xs text-orange-600 font-semibold mt-1">¥{price.toLocaleString()}</p>}
+      {price && <p className="text-xs text-orange-600 font-semibold mt-1">{price.toLocaleString()} VND</p>}
     </div>
   );
 }

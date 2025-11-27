@@ -92,9 +92,13 @@ export class HomeService {
 		// Chuẩn hoá dữ liệu trả về
 		return menu.map((m) => ({
 			menu_id: m.menu_id,
+			dish_id: m.dish?.dish_id ?? null,
 			dish_name: m.dish?.dish_name ?? null,
+			cuisine_type: m.dish?.cuisine_type ?? null,
 			primary_image_url: m.dish?.images?.[0]?.image_url ?? null,
+			restaurant_id: m.restaurant?.restaurant_id ?? null,
 			restaurant_name: m.restaurant?.restaurant_name ?? null,
+			price: m.price ?? null,
 		}));
 	}
 
