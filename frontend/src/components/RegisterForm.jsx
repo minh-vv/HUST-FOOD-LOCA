@@ -1,12 +1,14 @@
 import { useState } from "react";
+import { register } from "../api";
 
 
-export default function RegisterForm() {
+export default function RegisterForm({ onRegisterSuccess }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
 
   const validate = () => {
@@ -27,6 +29,10 @@ export default function RegisterForm() {
 
     if (!password.trim()) {
       newErrors.password = "パスワードを入力してください。";
+    } else if (password.length < 8) {
+      newErrors.password = "パスワードは8文字以上にしてください。";
+    } else if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      newErrors.password = "パスワードは英字と数字を含めてください。";
     }
 
 
@@ -42,13 +48,42 @@ export default function RegisterForm() {
   };
 
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validate()) return;
+
+    setLoading(true);
+    setErrors({});
+
+    try {
+      const response = await register({
+        username: username,
+        email: email,
+        password: password,
+      });
+
+      // Don't save token, just switch to login tab
+      if (onRegisterSuccess) {
+        onRegisterSuccess();
+      }
+    } catch (error) {
+      setErrors({
+        general: error.message || "登録に失敗しました。もう一度お試しください。",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
 
   return (
     <div className="w-full max-w-[420px] mx-auto px-4 sm:px-0">
+      {/* General Error */}
+      {errors.general && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          {errors.general}
+        </div>
+      )}
+
       {/* USERNAME */}
       <div className="mb-3">
         <input
@@ -56,8 +91,9 @@ export default function RegisterForm() {
           placeholder="ユーザー名"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={loading}
           className={`w-full p-3 border rounded-lg text-base sm:text-lg ${errors.username ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
         />
         <p
           className={`mt-1 text-sm ${errors.username ? "text-red-500" : "invisible"
@@ -75,8 +111,9 @@ export default function RegisterForm() {
           placeholder="メールアドレス"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
           className={`w-full p-3 border rounded-lg text-base sm:text-lg ${errors.email ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
         />
         <p
           className={`mt-1 text-sm ${errors.email ? "text-red-500" : "invisible"
@@ -94,8 +131,9 @@ export default function RegisterForm() {
           placeholder="パスワード"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
           className={`w-full p-3 border rounded-lg text-base sm:text-lg ${errors.password ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
         />
         <p
           className={`mt-1 text-sm ${errors.password ? "text-red-500" : "invisible"
@@ -113,8 +151,9 @@ export default function RegisterForm() {
           placeholder="パスワード（確認）"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={loading}
           className={`w-full p-3 border rounded-lg text-base sm:text-lg ${errors.confirmPassword ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
         />
         <p
           className={`mt-1 text-sm ${errors.confirmPassword ? "text-red-500" : "invisible"
@@ -126,9 +165,14 @@ export default function RegisterForm() {
 
       <button
         onClick={handleRegister}
-        className="w-full p-3 rounded-lg bg-orange-200 text-lg hover:bg-orange-300 transition"
+        disabled={loading}
+        className={`w-full p-3 rounded-lg text-lg transition ${
+          loading
+            ? "bg-gray-300 cursor-not-allowed"
+            : "bg-orange-200 hover:bg-orange-300"
+        }`}
       >
-        登録
+        {loading ? "登録中..." : "登録"}
       </button>
     </div>
   );

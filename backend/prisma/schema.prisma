@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,23 +8,37 @@ datasource db {
 }
 
 model User {
-  user_id           Int              @id @default(autoincrement())
-  username          String           @unique @db.VarChar(50)
-  email             String           @unique @db.VarChar(100)
-  password_hash     String           @db.VarChar(255)
-  full_name         String?          @db.VarChar(100)
-  profile_image_url String?          @db.VarChar(255)
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @default(now()) @updatedAt
-  last_login        DateTime?
-  country           String?          @db.VarChar(20) // Japanese, Vietnamese
-  
-  allergies         UserAllergy[]
-  reviews           Review[]
-  favorites         UserFavorite[]
-  saved             UserSaved[]
+  user_id             Int                  @id @default(autoincrement())
+  username            String               @unique @db.VarChar(50)
+  email               String               @unique @db.VarChar(100)
+  password_hash       String               @db.VarChar(255)
+  full_name           String?              @db.VarChar(100)
+  profile_image_url   String?              @db.VarChar(255)
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @default(now()) @updatedAt
+  last_login          DateTime?
+  country             String?              @db.VarChar(20)
+  passwordResetTokens PasswordResetToken[]
+  reviews             Review[]
+  allergies           UserAllergy[]
+  favorites           UserFavorite[]
+  saved               UserSaved[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id         Int       @id @default(autoincrement())
+  token      String    @unique @db.VarChar(255)
+  user_id    Int
+  expires_at DateTime
+  used       Boolean   @default(false)
+  created_at DateTime  @default(now())
+  used_at    DateTime?
+  user       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
 }
 
 model UserAllergy {
@@ -35,24 +46,24 @@ model UserAllergy {
   user_id       Int
   ingredient_id Int
   created_at    DateTime   @default(now())
-  
-  user          User       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   ingredient    Ingredient @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade)
+  user          User       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
+  @@index([ingredient_id], map: "user_allergies_ingredient_id_fkey")
+  @@index([user_id], map: "user_allergies_user_id_fkey")
   @@map("user_allergies")
 }
 
 model Restaurant {
-  restaurant_id        Int                @id @default(autoincrement())
-  restaurant_name      String             @db.VarChar(200)
-  address              String?            @db.Text
+  restaurant_id        Int               @id @default(autoincrement())
+  restaurant_name      String            @db.VarChar(200)
+  address              String?           @db.Text
   average_service_time Int?
-  google_map_url       String?            @db.VarChar(255)
-  website_url          String?            @db.VarChar(255)
-  description          String?            @db.Text
-  created_at           DateTime           @default(now())
-  updated_at           DateTime           @default(now()) @updatedAt
-  
+  google_map_url       String?           @db.VarChar(255)
+  website_url          String?           @db.VarChar(255)
+  description          String?           @db.Text
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @default(now()) @updatedAt
   images               RestaurantImage[]
   menu                 RestaurantMenu[]
   reviews              Review[]
@@ -69,22 +80,21 @@ model RestaurantImage {
   display_order Int        @default(0)
   is_primary    Boolean    @default(false)
   created_at    DateTime   @default(now())
-  
   restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
 
+  @@index([restaurant_id], map: "restaurant_images_restaurant_id_fkey")
   @@map("restaurant_images")
 }
 
 model Dish {
-  dish_id       Int               @id @default(autoincrement())
-  dish_name     String            @db.VarChar(200)
-  description   String?           @db.Text
-  average_price Decimal?          @db.Decimal(10, 2)
-  cuisine_type  String?           @db.VarChar(20) // Japanese, Vietnamese, Other
-  
+  dish_id       Int              @id @default(autoincrement())
+  dish_name     String           @db.VarChar(200)
+  description   String?          @db.Text
+  average_price Decimal?         @db.Decimal(10, 2)
+  cuisine_type  String?          @db.VarChar(20)
+  flavors       DishFlavor[]
   images        DishImage[]
   ingredients   DishIngredient[]
-  flavors       DishFlavor[]
   menu          RestaurantMenu[]
   reviews       Review[]
   favorites     UserFavorite[]
@@ -100,9 +110,9 @@ model DishImage {
   display_order Int      @default(0)
   is_primary    Boolean  @default(false)
   created_at    DateTime @default(now())
-  
   dish          Dish     @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "dish_images_dish_id_fkey")
   @@map("dish_images")
 }
 
@@ -110,7 +120,6 @@ model Ingredient {
   ingredient_id   Int              @id @default(autoincrement())
   ingredient_name String           @unique @db.VarChar(100)
   created_at      DateTime         @default(now())
-  
   dishes          DishIngredient[]
   userAllergies   UserAllergy[]
 
@@ -121,20 +130,20 @@ model DishIngredient {
   dish_ingredient_id Int        @id @default(autoincrement())
   dish_id            Int
   ingredient_id      Int
-  is_main            Boolean    @default(false) // Nguyên liệu chính
+  is_main            Boolean    @default(false)
   created_at         DateTime   @default(now())
-  
   dish               Dish       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
   ingredient         Ingredient @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "dish_ingredients_dish_id_fkey")
+  @@index([ingredient_id], map: "dish_ingredients_ingredient_id_fkey")
   @@map("dish_ingredients")
 }
 
 model Flavor {
   flavor_id   Int          @id @default(autoincrement())
-  flavor_name String       @unique @db.VarChar(50) // Chua, Mặn, Ngọt, Cay
+  flavor_name String       @unique @db.VarChar(50)
   created_at  DateTime     @default(now())
-  
   dishes      DishFlavor[]
 
   @@map("flavors")
@@ -144,12 +153,13 @@ model DishFlavor {
   dish_flavor_id Int      @id @default(autoincrement())
   dish_id        Int
   flavor_id      Int
-  intensity      Int      @default(3) // Độ đậm nhạt 1-5
+  intensity      Int      @default(3)
   created_at     DateTime @default(now())
-  
   dish           Dish     @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
   flavor         Flavor   @relation(fields: [flavor_id], references: [flavor_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "dish_flavors_dish_id_fkey")
+  @@index([flavor_id], map: "dish_flavors_flavor_id_fkey")
   @@map("dish_flavors")
 }
 
@@ -161,11 +171,12 @@ model RestaurantMenu {
   is_available  Boolean    @default(true)
   created_at    DateTime   @default(now())
   updated_at    DateTime   @default(now()) @updatedAt
-  
-  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
   dish          Dish       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
   reviews       Review[]
 
+  @@index([dish_id], map: "restaurant_menu_dish_id_fkey")
+  @@index([restaurant_id], map: "restaurant_menu_restaurant_id_fkey")
   @@map("restaurant_menu")
 }
 
@@ -174,19 +185,22 @@ model Review {
   user_id       Int
   dish_id       Int?
   restaurant_id Int?
-  menu_id       Int?            // Đánh giá món ăn tại nhà hàng cụ thể
-  rating        Int             // 1-5 stars
+  menu_id       Int?
+  rating        Int
   comment       String?         @db.Text
   has_image     Boolean         @default(false)
   created_at    DateTime        @default(now())
   updated_at    DateTime        @default(now()) @updatedAt
-  
-  user          User            @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  dish          Dish?           @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
-  restaurant    Restaurant?     @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
-  menu          RestaurantMenu? @relation(fields: [menu_id], references: [menu_id], onDelete: Cascade)
   images        ReviewImage[]
+  dish          Dish?           @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  menu          RestaurantMenu? @relation(fields: [menu_id], references: [menu_id], onDelete: Cascade)
+  restaurant    Restaurant?     @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  user          User            @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "reviews_dish_id_fkey")
+  @@index([menu_id], map: "reviews_menu_id_fkey")
+  @@index([restaurant_id], map: "reviews_restaurant_id_fkey")
+  @@index([user_id], map: "reviews_user_id_fkey")
   @@map("reviews")
 }
 
@@ -195,9 +209,9 @@ model ReviewImage {
   review_id  Int
   image_url  String   @db.VarChar(255)
   created_at DateTime @default(now())
-  
   review     Review   @relation(fields: [review_id], references: [review_id], onDelete: Cascade)
 
+  @@index([review_id], map: "review_images_review_id_fkey")
   @@map("review_images")
 }
 
@@ -207,11 +221,13 @@ model UserFavorite {
   dish_id       Int?
   restaurant_id Int?
   created_at    DateTime    @default(now())
-  
-  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   dish          Dish?       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
   restaurant    Restaurant? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "user_favorites_dish_id_fkey")
+  @@index([restaurant_id], map: "user_favorites_restaurant_id_fkey")
+  @@index([user_id], map: "user_favorites_user_id_fkey")
   @@map("user_favorites")
 }
 
@@ -221,10 +237,12 @@ model UserSaved {
   dish_id       Int?
   restaurant_id Int?
   created_at    DateTime    @default(now())
-  
-  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   dish          Dish?       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
   restaurant    Restaurant? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
+  @@index([dish_id], map: "user_saved_dish_id_fkey")
+  @@index([restaurant_id], map: "user_saved_restaurant_id_fkey")
+  @@index([user_id], map: "user_saved_user_id_fkey")
   @@map("user_saved")
 }
