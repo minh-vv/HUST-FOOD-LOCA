@@ -14,7 +14,7 @@ export async function register(userData) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "登録に失敗しました。");
+    throw new Error(data.message || "Đăng ký thất bại");
   }
 
   return data;
@@ -32,7 +32,7 @@ export async function login(credentials) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "ログインに失敗しました。");
+    throw new Error(data.message || "Đăng nhập thất bại");
   }
 
   return data;
@@ -48,7 +48,36 @@ export async function getProfile(token) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "プロフィールの取得に失敗しました。");
+    throw new Error(data.message || "Lấy thông tin người dùng thất bại");
+  }
+
+  return data;
+}
+
+export async function verifyResetToken(token) {
+  const res = await fetch(
+    `${API_URL}/auth/reset-password/verify?token=${encodeURIComponent(token)}`
+  );
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Token verification failed");
+  }
+
+  return data;
+}
+
+export async function resetPassword(payload) {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Reset password failed");
   }
 
   return data;
@@ -60,4 +89,3 @@ export async function getUsers() {
   const res = await fetch(`${API_URL}/api/users`);
   return res.json();
 }
-  
