@@ -1,15 +1,47 @@
 import { useRef, useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 
+
 const API_BASE_URL="http://localhost:3000/api/home"
 
 export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [trendFoods, setTrendFoods] = useState([]);
   const [trendRestaurants, setTrendRestaurants] = useState([]);
   const [trendMenus, setTrendMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  const handleSearchClick = async () => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults(null);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`http://localhost:3000/search?q=${encodeURIComponent(searchQuery)}`);
+      const data = await response.json();
+      if (data.success) {
+        setSearchResults(data.data);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      alert("検索に失敗しました");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearchClick();
+    }
+  };
+
   useEffect(() => {
     fetchHomeData();
   }, []);
