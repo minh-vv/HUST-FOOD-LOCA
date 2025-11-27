@@ -1,7 +1,63 @@
 export const API_URL = "http://localhost:3000";
 
-export async function getUsers() {
-    const res = await fetch(`/api/users`);
-    return res.json();
+// ==================== Auth APIs ====================
+
+export async function register(userData) {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(userData),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "登録に失敗しました。");
   }
+
+  return data;
+}
+
+export async function login(credentials) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "ログインに失敗しました。");
+  }
+
+  return data;
+}
+
+export async function getProfile(token) {
+  const res = await fetch(`${API_URL}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "プロフィールの取得に失敗しました。");
+  }
+
+  return data;
+}
+
+// ==================== Other APIs ====================
+
+export async function getUsers() {
+  const res = await fetch(`${API_URL}/api/users`);
+  return res.json();
+}
   

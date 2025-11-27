@@ -16,7 +16,7 @@ export default function Navbar() {
   return (
     <header className="flex justify-between items-center py-4 px-6 border-b bg-white">
       {/* Logo */}
-      <div className="text-2xl font-bold">HUST-FOOD-LOCA</div>
+      <div className="text-2xl font-bold">ハスト・フード・ロカ</div>
 
       {/* User Info */}
       <div className="flex items-center gap-4">
