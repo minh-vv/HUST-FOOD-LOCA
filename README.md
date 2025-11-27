@@ -36,11 +36,22 @@ Tạo file `.env` trong thư mục `backend`:
 DATABASE_URL="mysql://username:password@localhost:3306/hust_food_loca"
 ```
 
-Chạy migration database:
+## Database setup
+
+Nếu bạn đã có sẵn migration files và database online (có dữ liệu hiện tại), chạy:
 
 ```bash
-npx prisma migrate dev --name init
+cd prisma
+npx prisma migrate deploy
 ```
+```bash
+npx prisma studio
+```
+
+Lệnh này sẽ áp dụng tất cả migration đã có lên database mà không làm mất dữ liệu.
+
+**⚠️ Lưu ý:** Không dùng `npx prisma migrate dev` nếu DB đã có dữ liệu quan trọng.
+
 
 Khởi động backend:
 

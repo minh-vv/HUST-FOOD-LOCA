@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +8,223 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id           Int              @id @default(autoincrement())
+  username          String           @unique @db.VarChar(50)
+  email             String           @unique @db.VarChar(100)
+  password_hash     String           @db.VarChar(255)
+  full_name         String?          @db.VarChar(100)
+  profile_image_url String?          @db.VarChar(255)
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @default(now()) @updatedAt
+  last_login        DateTime?
+  country           String?          @db.VarChar(20) // Japanese, Vietnamese
+  
+  allergies         UserAllergy[]
+  reviews           Review[]
+  favorites         UserFavorite[]
+  saved             UserSaved[]
+
+  @@map("users")
+}
+
+model UserAllergy {
+  allergy_id    Int        @id @default(autoincrement())
+  user_id       Int
+  ingredient_id Int
+  created_at    DateTime   @default(now())
+  
+  user          User       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  ingredient    Ingredient @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade)
+
+  @@map("user_allergies")
+}
+
+model Restaurant {
+  restaurant_id        Int                @id @default(autoincrement())
+  restaurant_name      String             @db.VarChar(200)
+  address              String?            @db.Text
+  average_service_time Int?
+  google_map_url       String?            @db.VarChar(255)
+  website_url          String?            @db.VarChar(255)
+  description          String?            @db.Text
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @default(now()) @updatedAt
+  
+  images               RestaurantImage[]
+  menu                 RestaurantMenu[]
+  reviews              Review[]
+  favorites            UserFavorite[]
+  saved                UserSaved[]
+
+  @@map("restaurants")
+}
+
+model RestaurantImage {
+  image_id      Int        @id @default(autoincrement())
+  restaurant_id Int
+  image_url     String     @db.VarChar(255)
+  display_order Int        @default(0)
+  is_primary    Boolean    @default(false)
+  created_at    DateTime   @default(now())
+  
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+
+  @@map("restaurant_images")
+}
+
+model Dish {
+  dish_id       Int               @id @default(autoincrement())
+  dish_name     String            @db.VarChar(200)
+  description   String?           @db.Text
+  average_price Decimal?          @db.Decimal(10, 2)
+  cuisine_type  String?           @db.VarChar(20) // Japanese, Vietnamese, Other
+  
+  images        DishImage[]
+  ingredients   DishIngredient[]
+  flavors       DishFlavor[]
+  menu          RestaurantMenu[]
+  reviews       Review[]
+  favorites     UserFavorite[]
+  saved         UserSaved[]
+
+  @@map("dishes")
+}
+
+model DishImage {
+  image_id      Int      @id @default(autoincrement())
+  dish_id       Int
+  image_url     String   @db.VarChar(255)
+  display_order Int      @default(0)
+  is_primary    Boolean  @default(false)
+  created_at    DateTime @default(now())
+  
+  dish          Dish     @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+
+  @@map("dish_images")
+}
+
+model Ingredient {
+  ingredient_id   Int              @id @default(autoincrement())
+  ingredient_name String           @unique @db.VarChar(100)
+  created_at      DateTime         @default(now())
+  
+  dishes          DishIngredient[]
+  userAllergies   UserAllergy[]
+
+  @@map("ingredients")
+}
+
+model DishIngredient {
+  dish_ingredient_id Int        @id @default(autoincrement())
+  dish_id            Int
+  ingredient_id      Int
+  is_main            Boolean    @default(false) // Nguyên liệu chính
+  created_at         DateTime   @default(now())
+  
+  dish               Dish       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  ingredient         Ingredient @relation(fields: [ingredient_id], references: [ingredient_id], onDelete: Cascade)
+
+  @@map("dish_ingredients")
+}
+
+model Flavor {
+  flavor_id   Int          @id @default(autoincrement())
+  flavor_name String       @unique @db.VarChar(50) // Chua, Mặn, Ngọt, Cay
+  created_at  DateTime     @default(now())
+  
+  dishes      DishFlavor[]
+
+  @@map("flavors")
+}
+
+model DishFlavor {
+  dish_flavor_id Int      @id @default(autoincrement())
+  dish_id        Int
+  flavor_id      Int
+  intensity      Int      @default(3) // Độ đậm nhạt 1-5
+  created_at     DateTime @default(now())
+  
+  dish           Dish     @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  flavor         Flavor   @relation(fields: [flavor_id], references: [flavor_id], onDelete: Cascade)
+
+  @@map("dish_flavors")
+}
+
+model RestaurantMenu {
+  menu_id       Int        @id @default(autoincrement())
+  restaurant_id Int
+  dish_id       Int
+  price         Decimal?   @db.Decimal(10, 2)
+  is_available  Boolean    @default(true)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @default(now()) @updatedAt
+  
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  dish          Dish       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  reviews       Review[]
+
+  @@map("restaurant_menu")
+}
+
+model Review {
+  review_id     Int             @id @default(autoincrement())
+  user_id       Int
+  dish_id       Int?
+  restaurant_id Int?
+  menu_id       Int?            // Đánh giá món ăn tại nhà hàng cụ thể
+  rating        Int             // 1-5 stars
+  comment       String?         @db.Text
+  has_image     Boolean         @default(false)
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @default(now()) @updatedAt
+  
+  user          User            @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  dish          Dish?           @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  restaurant    Restaurant?     @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  menu          RestaurantMenu? @relation(fields: [menu_id], references: [menu_id], onDelete: Cascade)
+  images        ReviewImage[]
+
+  @@map("reviews")
+}
+
+model ReviewImage {
+  image_id   Int      @id @default(autoincrement())
+  review_id  Int
+  image_url  String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  
+  review     Review   @relation(fields: [review_id], references: [review_id], onDelete: Cascade)
+
+  @@map("review_images")
+}
+
+model UserFavorite {
+  favorite_id   Int         @id @default(autoincrement())
+  user_id       Int
+  dish_id       Int?
+  restaurant_id Int?
+  created_at    DateTime    @default(now())
+  
+  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  dish          Dish?       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  restaurant    Restaurant? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+
+  @@map("user_favorites")
+}
+
+model UserSaved {
+  saved_id      Int         @id @default(autoincrement())
+  user_id       Int
+  dish_id       Int?
+  restaurant_id Int?
+  created_at    DateTime    @default(now())
+  
+  user          User        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  dish          Dish?       @relation(fields: [dish_id], references: [dish_id], onDelete: Cascade)
+  restaurant    Restaurant? @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+
+  @@map("user_saved")
 }

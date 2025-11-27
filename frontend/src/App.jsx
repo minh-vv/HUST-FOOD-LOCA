@@ -1,18 +1,11 @@
-import { useEffect, useState } from "react";
-import { getUsers } from "./api";
-import HomePage from "./pages/HomePage.jsx";
-function App() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    getUsers().then(setUsers);
-  }, []);
-
+import { Routes, Route } from "react-router-dom";
+import AuthPage from "./pages/AuthPage";
+import HomePage from "./pages/HomePage";
+export default function App() {
   return (
-    <div className="p-6">
-      <HomePage/>
-    </div>
+    <Routes>
+      <Route path="/" element={<AuthPage />} />
+      <Route path="/home" element={<HomePage />} />
+    </Routes>
   );
 }
-
-export default App;
