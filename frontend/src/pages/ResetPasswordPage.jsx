@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword, verifyResetToken } from "../api";
 
@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
       setTokenStatus({
         checking: false,
         valid: false,
-        message: "Reset link is invalid or missing.",
+        message: "リセットリンクが無効か見つかりません。",
       });
       return;
     }
@@ -34,14 +34,14 @@ export default function ResetPasswordPage() {
         setTokenStatus({
           checking: false,
           valid: Boolean(res?.valid),
-          message: res?.valid ? "" : "Reset link is invalid or expired.",
+          message: res?.valid ? "" : "リセットリンクが無効または期限切れです。",
         });
       })
       .catch((err) => {
         setTokenStatus({
           checking: false,
           valid: false,
-          message: err?.message || "Reset link is invalid or expired.",
+          message: err?.message || "リセットリンクが無効または期限切れです。",
         });
       });
   }, [searchParams]);
@@ -50,15 +50,15 @@ export default function ResetPasswordPage() {
     const newErrors = {};
 
     if (!password.trim()) {
-      newErrors.password = "Please enter a new password.";
+      newErrors.password = "新しいパスワードを入力してください。";
     } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
+      newErrors.password = "パスワードは8文字以上にしてください。";
     }
 
     if (!confirm.trim()) {
-      newErrors.confirm = "Please confirm your password.";
+      newErrors.confirm = "パスワードを確認してください。";
     } else if (password && password !== confirm) {
-      newErrors.confirm = "Passwords do not match.";
+      newErrors.confirm = "パスワードが一致しません。";
     }
 
     setErrors(newErrors);
@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
     if (!validate()) return;
 
     if (!tokenStatus.valid || !token) {
-      setErrors({ general: "Reset link is invalid or expired." });
+      setErrors({ general: "リセットリンクが無効または期限切れです。" });
       return;
     }
 
@@ -80,14 +80,14 @@ export default function ResetPasswordPage() {
     try {
       const res = await resetPassword({ token, password });
       setSuccess(
-        res?.message || "Password has been reset. Redirecting to login..."
+        res?.message || "パスワードをリセットしました。ログイン画面へリダイレクトします..."
       );
 
       setTimeout(() => {
         navigate("/");
       }, 1500);
     } catch (err) {
-      setErrors({ general: err?.message || "Reset password failed." });
+      setErrors({ general: err?.message || "パスワードのリセットに失敗しました。" });
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-md p-6 sm:p-8 text-center">
-          <p className="text-lg font-semibold">Checking reset link...</p>
+          <p className="text-lg font-semibold">リセットリンクを確認しています...</p>
         </div>
       </div>
     );
@@ -108,13 +108,13 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-md p-6 sm:p-8 text-center space-y-4">
           <p className="text-lg font-semibold text-red-600">
-            {tokenStatus.message || "Reset link is invalid or expired."}
+            {tokenStatus.message || "リセットリンクが無効または期限切れです。"}
           </p>
           <button
             onClick={() => navigate("/")}
             className="w-full p-3 rounded-lg bg-orange-200 hover:bg-orange-300 transition text-lg"
           >
-            Back to login
+            ログインに戻る
           </button>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-md p-6 sm:p-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-          Reset your password
+          パスワードをリセット
         </h1>
 
         {errors.general && (
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
           <div className="mb-3">
             <input
               type="password"
-              placeholder="New password"
+              placeholder="新しいパスワード"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -160,7 +160,7 @@ export default function ResetPasswordPage() {
           <div className="mb-4">
             <input
               type="password"
-              placeholder="Confirm new password"
+              placeholder="新しいパスワード（確認）"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               disabled={loading}
@@ -190,7 +190,7 @@ export default function ResetPasswordPage() {
                 : "bg-orange-200 hover:bg-orange-300"
             }`}
           >
-            {loading ? "Processing..." : "Reset password"}
+            {loading ? "処理中..." : "パスワードをリセット"}
           </button>
         </form>
       </div>
