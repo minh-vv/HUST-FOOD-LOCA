@@ -1,7 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { EmailService } from './email.service';
@@ -10,7 +13,11 @@ import { EmailService } from './email.service';
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private prisma: PrismaService, private emailService: EmailService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private jwtService: JwtService,
+  ) {}
 
   private buildResetUrl(token: string): string {
     const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -28,6 +35,126 @@ export class AuthService {
       throw new BadRequestException('パスワードは英字と数字を含めてください。');
     }
   }
+
+  // ==================== Register & Login ====================
+
+  async register(dto: RegisterDto) {
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: dto.email },
+          { username: dto.username },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      if (existingUser.email === dto.email) {
+        throw new ConflictException('このメールアドレスは既に登録されています。');
+      }
+      if (existingUser.username === dto.username) {
+        throw new ConflictException('このユーザー名は既に使用されています。');
+      }
+    }
+
+    // Validate password strength
+    this.validatePasswordStrength(dto.password);
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // Create user
+    const user = await this.prisma.user.create({
+      data: {
+        username: dto.username,
+        email: dto.email,
+        password_hash: hashedPassword,
+        full_name: dto.full_name,
+        country: dto.country,
+      },
+      select: {
+        user_id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        country: true,
+        created_at: true,
+      },
+    });
+
+    // Generate JWT token
+    const token = this.generateToken(user);
+
+    this.logger.log(`New user registered: ${user.email}`);
+
+    return {
+      message: 'アカウントが正常に作成されました。',
+      user,
+      access_token: token,
+    };
+  }
+
+  async validateUser(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    // Update last login
+    await this.prisma.user.update({
+      where: { user_id: user.user_id },
+      data: { last_login: new Date() },
+    });
+
+    const { password_hash, ...result } = user;
+    return result;
+  }
+
+  async login(dto: LoginDto) {
+    const user = await this.validateUser(dto.email, dto.password);
+    
+    if (!user) {
+      throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません。');
+    }
+
+    const token = this.generateToken(user);
+
+    this.logger.log(`User logged in: ${user.email}`);
+
+    return {
+      message: 'ログインに成功しました。',
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name,
+        profile_image_url: user.profile_image_url,
+        country: user.country,
+      },
+      access_token: token,
+    };
+  }
+
+  private generateToken(user: any): string {
+    const payload = {
+      sub: user.user_id,
+      email: user.email,
+      username: user.username,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  // ==================== Password Reset ====================
+
 
   async requestPasswordReset(dto: ForgotPasswordDto): Promise<{ message: string }> {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });

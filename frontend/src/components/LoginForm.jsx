@@ -1,11 +1,13 @@
 import { useState } from "react";
 import ForgotPasswordModal from "./ForgotPasswordModal";
+import { login } from "../api";
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [showForgot, setShowForgot] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const newErrors = {};
@@ -24,13 +26,43 @@ export default function LoginForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validate()) return;
+
+    setLoading(true);
+    setErrors({});
+
+    try {
+      const response = await login({
+        email: username,
+        password: password,
+      });
+
+      // Save token to localStorage
+      localStorage.setItem("access_token", response.access_token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+
+      // Redirect to home page without alert
+      window.location.href = "/home";
+    } catch (error) {
+      setErrors({
+        general: error.message || "ログインに失敗しました。もう一度お試しください。",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <div className="w-full max-w-[420px] mx-auto px-4 sm:px-0">
+        {/* General Error */}
+        {errors.general && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {errors.general}
+          </div>
+        )}
+
         {/* USERNAME */}
         <div className="mb-3">
           <input
@@ -38,9 +70,10 @@ export default function LoginForm() {
             placeholder="メールアドレス"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
             className={`w-full p-3 border rounded-lg text-base sm:text-lg ${
               errors.username ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
           />
           <p
             className={`text-sm mt-1 ${
@@ -58,9 +91,10 @@ export default function LoginForm() {
             placeholder="パスワード"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
             className={`w-full p-3 border rounded-lg text-base sm:text-lg ${
               errors.password ? "border-red-500" : ""
-            }`}
+            } ${loading ? "bg-gray-100" : ""}`}
           />
           <p
             className={`text-sm mt-1 ${
@@ -79,6 +113,7 @@ export default function LoginForm() {
           <button
             onClick={() => setShowForgot(true)}
             className="text-blue-600 sm:text-right"
+            disabled={loading}
           >
             パスワードを忘れた
           </button>
@@ -86,9 +121,14 @@ export default function LoginForm() {
 
         <button
           onClick={handleLogin}
-          className="w-full p-3 rounded-lg bg-orange-200 text-lg hover:bg-orange-300 transition"
+          disabled={loading}
+          className={`w-full p-3 rounded-lg text-lg transition ${
+            loading
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-orange-200 hover:bg-orange-300"
+          }`}
         >
-          ログイン
+          {loading ? "ログイン中..." : "ログイン"}
         </button>
       </div>
 

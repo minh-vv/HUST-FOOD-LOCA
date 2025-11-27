@@ -36,7 +36,7 @@ export default function AuthPage() {
 
 
         {tab === "login" && <LoginForm />}
-        {tab === "register" && <RegisterForm />}
+        {tab === "register" && <RegisterForm onRegisterSuccess={() => setTab("login")} />}
       </div>
     </div>
   );
