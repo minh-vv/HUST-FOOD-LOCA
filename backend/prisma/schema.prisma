@@ -8,37 +8,34 @@ datasource db {
 }
 
 model User {
-  user_id           Int              @id @default(autoincrement())
-  username          String           @unique @db.VarChar(50)
-  email             String           @unique @db.VarChar(100)
-  password_hash     String           @db.VarChar(255)
-  full_name         String?          @db.VarChar(100)
-  profile_image_url String?          @db.VarChar(255)
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @default(now()) @updatedAt
-  last_login        DateTime?
-  country           String?          @db.VarChar(20) // Japanese, Vietnamese
-
-  // relations
-  allergies         UserAllergy[]
-  reviews           Review[]
-  favorites         UserFavorite[]
-  saved             UserSaved[]
+  user_id             Int                  @id @default(autoincrement())
+  username            String               @unique @db.VarChar(50)
+  email               String               @unique @db.VarChar(100)
+  password_hash       String               @db.VarChar(255)
+  full_name           String?              @db.VarChar(100)
+  profile_image_url   String?              @db.VarChar(255)
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @default(now()) @updatedAt
+  last_login          DateTime?
+  country             String?              @db.VarChar(20)
   passwordResetTokens PasswordResetToken[]
+  reviews             Review[]
+  allergies           UserAllergy[]
+  favorites           UserFavorite[]
+  saved               UserSaved[]
 
   @@map("users")
 }
 
 model PasswordResetToken {
-  token_id   Int      @id @default(autoincrement())
-  token      String   @unique @db.VarChar(255)
+  id         Int       @id @default(autoincrement())
+  token      String    @unique @db.VarChar(255)
   user_id    Int
   expires_at DateTime
-  used       Boolean  @default(false)
+  used       Boolean   @default(false)
+  created_at DateTime  @default(now())
   used_at    DateTime?
-  created_at DateTime @default(now())
-
-  user       User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@index([user_id])
   @@map("password_reset_tokens")
