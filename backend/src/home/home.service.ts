@@ -6,23 +6,21 @@ export class HomeService {
 	constructor(private prisma: PrismaService) {}
 
 	/**
-	 * Lấy danh sách món ăn trending (dựa trên số lượng reviews giảm dần)
+	 * Lấy danh sách món ăn trending
 	 * @param limit - số lượng món cần lấy
 	 */
 	async getTrendingDishes(limit = 6) {
-		// Query lấy danh sách món ăn, ưu tiên món có nhiều review nhất
 		const dishes = await this.prisma.dish.findMany({
 			take: limit,
-			orderBy: { reviews: { _count: 'desc' } }, // Sắp xếp theo số review
 			include: {
 				images: {
-					where: { is_primary: true }, // Chỉ lấy ảnh chính
+					where: { is_primary: true },
 					take: 1,
 				},
 			},
+			orderBy: { dish_id: 'desc' },
 		});
 
-		// Chuẩn hoá dữ liệu trả về theo DTO
 		return dishes.map((d) => ({
 			dish_id: d.dish_id,
 			dish_name: d.dish_name,
@@ -36,20 +34,30 @@ export class HomeService {
 	 * @param limit - số lượng nhà hàng cần lấy
 	 */
 	async getTrendingRestaurants(limit = 6) {
-		// Query các nhà hàng trending
 		const restaurants = await this.prisma.restaurant.findMany({
-			take: limit,
-			orderBy: { reviews: { _count: 'desc' } }, // nhà hàng nhiều review nhất lên trước
 			include: {
 				images: {
 					where: { is_primary: true },
 					take: 1,
 				},
+				menu: {
+					include: {
+						reviews: true,
+					},
+				},
 			},
 		});
 
-		// Chuẩn hoá dữ liệu
-		return restaurants.map((r) => ({
+		// Sắp xếp theo tổng số reviews và lấy top limit
+		const sortedRestaurants = restaurants
+			.map((r) => ({
+				...r,
+				totalReviews: r.menu.reduce((sum, m) => sum + m.reviews.length, 0),
+			}))
+			.sort((a, b) => b.totalReviews - a.totalReviews)
+			.slice(0, limit);
+
+		return sortedRestaurants.map((r) => ({
 			restaurant_id: r.restaurant_id,
 			restaurant_name: r.restaurant_name,
 			primary_image_url: r.images?.[0]?.image_url ?? null,
@@ -57,48 +65,50 @@ export class HomeService {
 	}
 
 	/**
-	 * Lấy menu items trending bằng cách:
-	 * 1. Lấy top 5 nhà hàng trending
-	 * 2. Lấy menu items thuộc các nhà hàng đó
+	 * Lấy menu items trending
+	 * Chỉ lấy các menu items mới nhất có sẵn
 	 */
 	async getTrendingMenuItems(limit = 6) {
-		// (1) Lấy 5 nhà hàng trending dựa theo review
-		const trending = await this.prisma.restaurant.findMany({
-			take: 5,
-			orderBy: { reviews: { _count: 'desc' } },
-		});
-
-		const ids = trending.map((r) => r.restaurant_id);
-
-		// (2) Lấy menu thuộc các nhà hàng trending
 		const menu = await this.prisma.restaurantMenu.findMany({
 			where: {
-				restaurant_id: { in: ids },
+				is_available: true,
 			},
 			take: limit,
 			include: {
-				dish: {
-					include: {
+				restaurant: {
+					select: {
+						restaurant_id: true,
+						restaurant_name: true,
 						images: {
 							where: { is_primary: true },
 							take: 1,
+							select: { image_url: true },
 						},
 					},
 				},
-				restaurant: true,
+				ingredients: {
+					take: 3,
+					include: {
+						ingredient: true,
+					},
+				},
+			},
+			orderBy: {
+				created_at: 'desc',
 			},
 		});
 
-		// Chuẩn hoá dữ liệu trả về
 		return menu.map((m) => ({
 			menu_id: m.menu_id,
-			dish_id: m.dish?.dish_id ?? null,
-			dish_name: m.dish?.dish_name ?? null,
-			cuisine_type: m.dish?.cuisine_type ?? null,
-			primary_image_url: m.dish?.images?.[0]?.image_url ?? null,
+			primary_image_url: m.restaurant?.images?.[0]?.image_url ?? null,
 			restaurant_id: m.restaurant?.restaurant_id ?? null,
 			restaurant_name: m.restaurant?.restaurant_name ?? null,
 			price: m.price ?? null,
+			ingredients: m.ingredients?.map((mi) => ({
+				ingredient_id: mi.ingredient.ingredient_id,
+				ingredient_name: mi.ingredient.ingredient_name,
+				is_main: mi.is_main,
+			})) ?? [],
 		}));
 	}
 

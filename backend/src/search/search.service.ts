@@ -44,9 +44,6 @@ export class SearchService {
     if (dishes.length > 0) {
       const dishIds = dishes.map((d) => d.dish_id);
       restaurantsWithDishes = await this.prisma.restaurantMenu.findMany({
-        where: {
-          dish_id: { in: dishIds },
-        },
         include: {
           restaurant: {
             include: {
