@@ -46,7 +46,8 @@ export default function LoginForm() {
       window.location.href = "/home";
     } catch (error) {
       setErrors({
-        general: error.message || "ログインに失敗しました。もう一度お試しください。",
+        general:
+          error.message || "ログインに失敗しました。もう一度お試しください。",
       });
     } finally {
       setLoading(false);
@@ -105,11 +106,7 @@ export default function LoginForm() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm mb-4 gap-2">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" /> アカウントを保持する
-          </label>
-
+        <div className="flex flex-col sm:flex-row justify-end text-sm mb-4 gap-2">
           <button
             onClick={() => setShowForgot(true)}
             className="text-blue-600 sm:text-right"
