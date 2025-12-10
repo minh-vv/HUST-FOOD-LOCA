@@ -224,8 +224,8 @@ function Section({ title, items, type }) {
       <div className="max-w-5xl mx-auto">
         {/* Header với title và nút "Xem thêm" */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold underline cursor-pointer hover:text-blue-600 transition-colors">{title}</h2>
-          <button className="text-blue-600 font-medium underline hover:text-blue-800">
+          <h2 className="text-xl font-bold cursor-pointer hover:text-blue-600 hover:underline transition-colors">{title}</h2>
+          <button className="text-blue-600 font-medium hover:text-blue-800 hover:underline">
             もっと見る
           </button>
         </div>
