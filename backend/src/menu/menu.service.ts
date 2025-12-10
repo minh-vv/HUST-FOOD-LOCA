@@ -2,10 +2,21 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MenuDetailResponseDto } from './dto/menu-detail-response.dto';
 
+/**
+ * Service for handling restaurant menu operations.
+ * Provides methods to retrieve menu details including images, ingredients, reviews, and associated restaurant information.
+ */
 @Injectable()
 export class MenuService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Retrieves detailed information for a specific menu item by its ID.
+   * Includes associated restaurant info, menu images, ingredients, and reviews.
+   *
+   * @param {number} menuId - The unique identifier of the menu item to retrieve.
+   * @returns {Promise<MenuDetailResponseDto | null>} The detailed menu information, or null if not found.
+   */
   async getMenuDetail(menuId: number): Promise<MenuDetailResponseDto | null> {
     const menu = await this.prisma.restaurantMenu.findUnique({
       where: { menu_id: menuId },
