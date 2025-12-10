@@ -6,6 +6,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { SearchModule } from './search/search.module';
 import { HomeModule } from './home/home.module';
+import { MenuModule } from './menu/menu.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,6 +17,7 @@ import { HomeModule } from './home/home.module';
     AuthModule,
     SearchModule,
     HomeModule,
+    MenuModule,
   ],
   controllers: [AppController],
   providers: [AppService],
