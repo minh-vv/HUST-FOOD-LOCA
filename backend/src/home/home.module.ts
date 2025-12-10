@@ -4,9 +4,8 @@ import { HomeController } from './home.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-	imports: [PrismaModule],
-	controllers: [HomeController],
-	providers: [HomeService],
+  imports: [PrismaModule],
+  controllers: [HomeController],
+  providers: [HomeService],
 })
 export class HomeModule {}
-

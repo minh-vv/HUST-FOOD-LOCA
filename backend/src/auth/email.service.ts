@@ -8,7 +8,9 @@ export class EmailService {
 
   constructor() {
     const host = process.env.SMTP_HOST;
-    const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+    const port = process.env.SMTP_PORT
+      ? Number(process.env.SMTP_PORT)
+      : undefined;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
@@ -20,7 +22,9 @@ export class EmailService {
         auth: { user, pass },
       });
     } else {
-      this.logger.warn('SMTP settings missing; emails will be logged instead of sent.');
+      this.logger.warn(
+        'SMTP settings missing; emails will be logged instead of sent.',
+      );
     }
   }
 
@@ -31,7 +35,10 @@ export class EmailService {
     }
 
     await this.transporter.sendMail({
-      from: process.env.SMTP_FROM ?? process.env.SMTP_USER ?? 'no-reply@example.com',
+      from:
+        process.env.SMTP_FROM ??
+        process.env.SMTP_USER ??
+        'no-reply@example.com',
       to,
       subject: 'パスワード再設定のご案内',
       html: `

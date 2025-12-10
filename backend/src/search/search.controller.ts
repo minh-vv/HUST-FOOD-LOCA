@@ -16,7 +16,6 @@ export class SearchController {
     }
 
     const results = await this.searchService.searchByKeyword(query.trim());
-    
     return {
       success: true,
       message: 'Search results',

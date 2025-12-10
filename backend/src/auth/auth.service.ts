@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -20,7 +26,10 @@ export class AuthService {
   ) {}
 
   private buildResetUrl(token: string): string {
-    const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(
+      /\/$/,
+      '',
+    );
     return `${base}/reset-password?token=${token}`;
   }
 
@@ -42,16 +51,15 @@ export class AuthService {
     // Check if user already exists
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { email: dto.email },
-          { username: dto.username },
-        ],
+        OR: [{ email: dto.email }, { username: dto.username }],
       },
     });
 
     if (existingUser) {
       if (existingUser.email === dto.email) {
-        throw new ConflictException('このメールアドレスは既に登録されています。');
+        throw new ConflictException(
+          'このメールアドレスは既に登録されています。',
+        );
       }
       if (existingUser.username === dto.username) {
         throw new ConflictException('このユーザー名は既に使用されています。');
@@ -121,9 +129,11 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto.email, dto.password);
-    
+
     if (!user) {
-      throw new UnauthorizedException('メールアドレスまたはパスワードが正しくありません。');
+      throw new UnauthorizedException(
+        'メールアドレスまたはパスワードが正しくありません。',
+      );
     }
 
     const token = this.generateToken(user);
@@ -155,9 +165,12 @@ export class AuthService {
 
   // ==================== Password Reset ====================
 
-
-  async requestPasswordReset(dto: ForgotPasswordDto): Promise<{ message: string }> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+  async requestPasswordReset(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
     if (!user) {
       throw new BadRequestException('該当するメールアドレスが見つかりません。');
@@ -185,13 +198,11 @@ export class AuthService {
   }
 
   async verifyResetToken(token: string): Promise<{ valid: boolean }> {
-    const record = await this.prisma.passwordResetToken.findUnique({ where: { token } });
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
 
-    if (
-      !record ||
-      record.used ||
-      record.expires_at.getTime() < Date.now()
-    ) {
+    if (!record || record.used || record.expires_at.getTime() < Date.now()) {
       return { valid: false };
     }
 
@@ -214,9 +225,14 @@ export class AuthService {
 
     this.validatePasswordStrength(dto.password);
 
-    const isSameAsOld = await bcrypt.compare(dto.password, record.user.password_hash);
+    const isSameAsOld = await bcrypt.compare(
+      dto.password,
+      record.user.password_hash,
+    );
     if (isSameAsOld) {
-      throw new BadRequestException('新しいパスワードは以前のものと異なる必要があります。');
+      throw new BadRequestException(
+        '新しいパスワードは以前のものと異なる必要があります。',
+      );
     }
 
     const hashed = await bcrypt.hash(dto.password, 10);
@@ -231,12 +247,18 @@ export class AuthService {
         data: { used: true, used_at: new Date() },
       }),
       this.prisma.passwordResetToken.updateMany({
-        where: { user_id: record.user_id, used: false, token: { not: dto.token } },
+        where: {
+          user_id: record.user_id,
+          used: false,
+          token: { not: dto.token },
+        },
         data: { used: true, used_at: new Date() },
       }),
     ]);
 
     this.logger.log(`Password reset for user_id=${record.user_id}`);
-    return { message: 'パスワードをリセットしました。ログイン画面へお進みください。' };
+    return {
+      message: 'パスワードをリセットしました。ログイン画面へお進みください。',
+    };
   }
 }
