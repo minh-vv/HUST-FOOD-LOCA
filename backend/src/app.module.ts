@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SearchModule } from './search/search.module';
 import { HomeModule } from './home/home.module';
 import { MenuModule } from './menu/menu.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MenuModule } from './menu/menu.module';
     SearchModule,
     HomeModule,
     MenuModule,
+    RestaurantModule,
   ],
   controllers: [AppController],
   providers: [AppService],
