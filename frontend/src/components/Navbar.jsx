@@ -42,7 +42,7 @@ export default function Navbar() {
     <header className="flex justify-between items-center py-4 px-6 border-b bg-white">
       {/* Logo */}
       <div 
-        className="text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+        className="text-2xl font-bold cursor-pointer hover:text-orange-600 transition-colors"
         onClick={() => navigate("/home")}
       >
         ハスト・フード・ロカ
@@ -55,8 +55,8 @@ export default function Navbar() {
           <span className="px-2 py-1">{userName}さん、こんにちは</span>
           {isOpen && (
             <div className="absolute top-full left-0 mt-2 bg-white shadow-md border rounded w-40 z-10">
-              <div className="px-3 py-2 hover:bg-blue-100 hover:text-blue-700 cursor-pointer transition-colors" onClick={() => console.log('Profile')}>プロフィール</div>
-              <div className="px-3 py-2 hover:bg-red-100 hover:text-red-700 cursor-pointer transition-colors" onClick={handleLogout}>ログアウト</div>
+              <div className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors" onClick={() => console.log('Profile')}>プロフィール</div>
+              <div className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors" onClick={handleLogout}>ログアウト</div>
             </div>
           )}
         </div>

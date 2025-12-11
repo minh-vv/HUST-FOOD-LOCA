@@ -125,7 +125,7 @@ export default function RelatedDishes({ restaurantId, currentMenuId }) {
 
               {/* Dish Info */}
               <div className="p-4">
-                <h3 className="font-semibold text-gray-800 text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-semibold text-gray-800 text-lg mb-2 group-hover:text-orange-600 transition-colors">
                   {dish.name || "料理名"}
                 </h3>
 
