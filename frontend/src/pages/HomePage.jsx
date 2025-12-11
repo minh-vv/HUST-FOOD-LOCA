@@ -131,51 +131,7 @@ export default function HomePage() {
 
       {/* Hiển thị kết quả tìm kiếm */}
       {searchResults && (
-        <div className="max-w-5xl mx-auto mt-6">
-          {/* Mục Món ăn */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4">料理</h3>
-            {searchResults.dishes?.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {searchResults.dishes.map((dish) => (
-                  <SearchResultCard
-                    key={dish.id}
-                    item={dish}
-                    onClick={() => setSelectedItem(dish)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">データがありません</p>
-            )}
-          </div>
-
-          {/* Mục Nhà hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4">レストラン</h3>
-            {searchResults.restaurants?.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {searchResults.restaurants.map((restaurant) => (
-                  <SearchResultCard
-                    key={restaurant.id}
-                    item={restaurant}
-                    onClick={() => setSelectedItem(restaurant)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">データがありません</p>
-            )}
-          </div>
-
-          {searchResults.restaurants?.length === 0 &&
-            searchResults.dishes?.length === 0 &&
-            searchResults.restaurantsWithDishes?.length === 0 && (
-              <p className="text-center text-gray-500 mt-8">
-                検索結果が存在しません
-              </p>
-            )}
-        </div>
+        <SearchResultsSection searchResults={searchResults} navigate={navigate} />
       )}
 
       {/* Hiển thị trending khi không search */}
@@ -427,7 +383,7 @@ function SearchResultCard({ item, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="min-w-52 p-4 border rounded-lg text-center cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all flex-shrink-0"
+      className="w-52 p-4 border rounded-lg text-center cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all flex-shrink-0"
     >
       <div className="w-full h-32 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
         {item.image ? (
@@ -442,10 +398,103 @@ function SearchResultCard({ item, onClick }) {
       </div>
       <p className="mt-2 text-sm font-medium">{item.name}</p>
       {item.address && <p className="text-xs text-gray-600">{item.address}</p>}
-      {item.price && <p className="text-xs text-blue-600">¥{item.price}</p>}
+      {item.price && <p className="text-xs text-orange-600">{item.price} VND</p>}
       {item.description && (
         <p className="text-xs text-gray-500 mt-1">
           {item.description?.substring(0, 50)}...
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SearchResultsSection({ searchResults, navigate }) {
+  const ITEMS_PER_PAGE = 4;
+  const [dishPage, setDishPage] = useState(0);
+  const [restaurantPage, setRestaurantPage] = useState(0);
+
+  const dishes = searchResults.dishes || [];
+  const restaurants = searchResults.restaurants || [];
+
+  const dishTotalPages = Math.ceil(dishes.length / ITEMS_PER_PAGE);
+  const restaurantTotalPages = Math.ceil(restaurants.length / ITEMS_PER_PAGE);
+
+  const getVisibleItems = (items, page) => {
+    const startIndex = page * ITEMS_PER_PAGE;
+    return items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  };
+
+  const renderPaginatedSection = (title, items, page, setPage) => {
+    if (items.length === 0) return null;
+
+    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    const visibleItems = getVisibleItems(items, page);
+    const showNavigation = items.length > ITEMS_PER_PAGE;
+
+    return (
+      <section className="mt-10">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-xl font-bold mb-4">{title}</h2>
+
+          <div className="flex items-center gap-4">
+            {/* Nút trái - chỉ hiển thị nếu có nhiều hơn 4 items */}
+            {showNavigation && (
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                disabled={page === 0}
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
+                ${
+                  page === 0
+                    ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-400 text-white hover:bg-orange-500"
+                }`}
+              >
+                &#8592;
+              </button>
+            )}
+
+            {/* Hiển thị 4 item / lần */}
+            <div className="flex gap-6 overflow-hidden flex-1">
+              {visibleItems.map((item) => (
+                <SearchResultCard
+                  key={item.id}
+                  item={item}
+                  onClick={() => navigate(
+                    item.restaurant_id ? `/restaurant/${item.restaurant_id}` : `/dish/${item.id}`
+                  )}
+                />
+              ))}
+            </div>
+
+            {/* Nút phải - chỉ hiển thị nếu có nhiều hơn 4 items */}
+            {showNavigation && (
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                disabled={page === totalPages - 1}
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
+                ${
+                  page === totalPages - 1
+                    ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-400 text-white hover:bg-orange-500"
+                }`}
+              >
+                &#8594;
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto mt-6">
+      {renderPaginatedSection("料理", dishes, dishPage, setDishPage)}
+      {renderPaginatedSection("レストラン", restaurants, restaurantPage, setRestaurantPage)}
+
+      {dishes.length === 0 && restaurants.length === 0 && (
+        <p className="text-center text-gray-500 mt-8">
+          検索結果が存在しません
         </p>
       )}
     </div>

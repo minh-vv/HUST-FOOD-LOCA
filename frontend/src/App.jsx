@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DishDetailPage from "./pages/DishDetailPage";
 import RestaurantDetailPage from "./pages/RestaurantDetailPage";
+import ReviewPage from "./pages/ReviewPage";
 
 export default function App() {
   return (
@@ -11,7 +12,8 @@ export default function App() {
       <Route path="/" element={<AuthPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/menu/:menuId" element={<DishDetailPage />} />
+      <Route path="/dish/:menuId" element={<DishDetailPage />} />
+      <Route path="/review/:menuId" element={<ReviewPage />} />
       <Route
         path="/restaurant/:restaurantId"
         element={<RestaurantDetailPage />}

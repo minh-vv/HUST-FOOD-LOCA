@@ -30,34 +30,22 @@ export class HomeService {
 	}
 
 	/**
-	 * Lấy danh sách nhà hàng trending (dựa theo số review nhiều nhất)
+	 * Lấy danh sách nhà hàng trending
 	 * @param limit - số lượng nhà hàng cần lấy
 	 */
 	async getTrendingRestaurants(limit = 6) {
 		const restaurants = await this.prisma.restaurant.findMany({
+			take: limit,
 			include: {
 				images: {
 					where: { is_primary: true },
 					take: 1,
 				},
-				menu: {
-					include: {
-						reviews: true,
-					},
-				},
 			},
+			orderBy: { restaurant_id: 'desc' },
 		});
 
-		// Sắp xếp theo tổng số reviews và lấy top limit
-		const sortedRestaurants = restaurants
-			.map((r) => ({
-				...r,
-				totalReviews: r.menu.reduce((sum, m) => sum + m.reviews.length, 0),
-			}))
-			.sort((a, b) => b.totalReviews - a.totalReviews)
-			.slice(0, limit);
-
-		return sortedRestaurants.map((r) => ({
+		return restaurants.map((r) => ({
 			restaurant_id: r.restaurant_id,
 			restaurant_name: r.restaurant_name,
 			primary_image_url: r.images?.[0]?.image_url ?? null,
@@ -74,42 +62,30 @@ export class HomeService {
 				is_available: true,
 			},
 			take: limit,
-			include: {
-				restaurant: {
-					select: {
-						restaurant_id: true,
-						restaurant_name: true,
-						images: {
-							where: { is_primary: true },
-							take: 1,
-							select: { image_url: true },
-						},
-					},
-				},
-				ingredients: {
-					take: 3,
-					include: {
-						ingredient: true,
-					},
-				},
-			},
 			orderBy: {
 				created_at: 'desc',
 			},
 		});
 
-		return menu.map((m) => ({
-			menu_id: m.menu_id,
-			primary_image_url: m.restaurant?.images?.[0]?.image_url ?? null,
-			restaurant_id: m.restaurant?.restaurant_id ?? null,
-			restaurant_name: m.restaurant?.restaurant_name ?? null,
-			price: m.price ?? null,
-			ingredients: m.ingredients?.map((mi) => ({
-				ingredient_id: mi.ingredient.ingredient_id,
-				ingredient_name: mi.ingredient.ingredient_name,
-				is_main: mi.is_main,
-			})) ?? [],
-		}));
+		// Fetch restaurant data separately to avoid schema issues
+		const enriched = await Promise.all(
+			menu.map(async (m) => {
+				const restaurant = await this.prisma.restaurant.findUnique({
+					where: { restaurant_id: m.restaurant_id },
+					select: { restaurant_name: true, images: { where: { is_primary: true }, take: 1 } },
+				});
+
+				return {
+					menu_id: m.menu_id,
+					restaurant_id: m.restaurant_id,
+					restaurant_name: restaurant?.restaurant_name ?? null,
+					price: m.price ?? null,
+					primary_image_url: restaurant?.images?.[0]?.image_url ?? null,
+				};
+			}),
+		);
+
+		return enriched;
 	}
 
 	/**
