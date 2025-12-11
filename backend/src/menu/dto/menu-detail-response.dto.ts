@@ -118,10 +118,10 @@ export class MenuDetailResponseDto {
     address: string | null;
   };
   /**
-   * URL of the menu item's image, or null if not available.
-   * @type {string | null}
+   * List of images for the menu item.
+   * @type {Array<{ image_url: string }>}
    */
-  image_url: string | null;
+  images: Array<{ image_url: string }>;
   /**
    * Average rating of the menu item.
    * @type {number}
@@ -143,9 +143,13 @@ export class MenuDetailResponseDto {
    */
   ingredients: MenuIngredientsDto;
   /**
+   * Flavors/taste characteristics of the menu item.
+   * @type {string}
+   */
+  taste: string;
+  /**
    * List of reviews for the menu item.
    * @type {ReviewDto[]}
    */
   reviews: ReviewDto[];
 }
-

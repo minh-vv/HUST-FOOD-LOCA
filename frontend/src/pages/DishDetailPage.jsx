@@ -99,109 +99,45 @@ export default function DishDetailPage() {
         {/* --------------------- PHẦN KHUNG CHÍNH (3 → 10) --------------------- */}
         <div className="bg-white shadow-md rounded-lg p-6 border">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* --------------------- 3. ẢNH LỚN --------------------- */}
-            <div className="flex justify-center">
-              <div className="w-[330px] h-[330px] bg-gray-100 border border-gray-300 rounded-lg overflow-hidden flex justify-center items-center">
-                {dishDetail.images?.length ? (
-                  <img
-                    src={dishDetail.images[thumbIndex]?.image_url}
-                    alt="dish"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-400">画像がありません</span>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT: INFO */}
-            <div className="space-y-6">
-              {/* --- Row: Title + ❤️⭐--- */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-gray-600 font-semibold">
-                    名前・呼び方
-                  </p>
-
-                  {/* ❤️ + ⭐ */}
-                  <div className="flex items-center gap-4">
-                    {/* Favorite */}
-                    <button
-                      onClick={handleFavoriteClick}
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm border transition-colors ${
-                        isFavorited
-                          ? "bg-red-100 border-red-300 text-red-600"
-                          : "bg-gray-50 border-gray-300 text-gray-500 hover:bg-gray-100"
-                      }`}
-                    >
-                      <Heart
-                        size={18}
-                        fill={isFavorited ? "currentColor" : "none"}
+            {/* --------------------- 3. ẢNH LỚN + THUMBNAILS --------------------- */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="flex justify-center">
+                <div className="w-full h-96 bg-gray-100 border border-gray-300 rounded-lg overflow-hidden flex justify-center items-center relative">
+                  {dishDetail.images?.length ? (
+                    <>
+                      <img
+                        src={dishDetail.images[thumbIndex]?.image_url}
+                        alt="dish"
+                        className="w-full h-full object-cover"
                       />
-                      <span>お気に入り</span>
-                    </button>
-
-                    {/* Rating stars */}
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          onClick={() => handleRatingClick(star)}
-                          className={`transition-colors ${
-                            rating >= star ? "text-yellow-400" : "text-gray-300"
-                          }`}
-                        >
-                          <Star
-                            size={20}
-                            fill={rating >= star ? "currentColor" : "none"}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                      {/* Navigation buttons */}
+                      {dishDetail.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={handleThumbLeft}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                          >
+                            ❮
+                          </button>
+                          <button
+                            onClick={handleThumbRight}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                          >
+                            ❯
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">画像がありません</span>
+                  )}
                 </div>
-
-                {/* Name */}
-                <p className="text-gray-800 font-medium text-lg">
-                  {dishDetail.menu_name || dishDetail.name || "料理名"}
-                </p>
               </div>
 
-              {/* --- 7. Ingredients --- */}
-              <div>
-                <p className="text-sm text-gray-600 font-semibold">一般材料</p>
-                <p className="text-gray-800 mt-1">
-                  {dishDetail.ingredients?.main?.length > 0
-                    ? dishDetail.ingredients.main
-                        .map((ing) => ing.name)
-                        .join(", ")
-                    : dishDetail.main_ingredients || "ー"}
-                </p>
-              </div>
-
-              {/* --- 8. Taste --- */}
-              <div>
-                <p className="text-sm text-gray-600 font-semibold">味</p>
-                <p className="text-gray-800 mt-1">{dishDetail.taste || "ー"}</p>
-              </div>
-
-              {/* --- 9. Price --- */}
-              <div>
-                <p className="text-sm text-gray-600 font-semibold">
-                  値段の範囲
-                </p>
-                <p className="text-gray-800 mt-1 font-semibold text-lg">
-                  {priceText}
-                </p>
-              </div>
-
-              {/* --- 10. Image list  --- */}
-              <div>
-                <p className="text-sm text-gray-600 font-semibold mb-2">
-                  食べ物の画像
-                </p>
-
-                <div className="flex items-center gap-3 overflow-x-auto">
+              {/* Thumbnail list */}
+              {dishDetail.images?.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
                   {dishDetail.images?.map((img, idx) => (
                     <button
                       key={idx}
@@ -218,12 +154,131 @@ export default function DishDetailPage() {
                       />
                     </button>
                   ))}
+                </div>
+              )}
+            </div>
 
-                  {!dishDetail.images?.length && (
-                    <p className="text-gray-400 text-sm">画像がありません</p>
+            {/* RIGHT: INFO */}
+            <div className="space-y-6">
+              {/* --- Row: Title + ❤️⭐--- */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800">
+                    {dishDetail.menu_name || dishDetail.name || "料理名"}
+                  </h1>
+                </div>
+                {/* ❤️ + ⭐ */}
+                <div className="flex items-center gap-3">
+                  {/* Favorite */}
+                  <button
+                    onClick={handleFavoriteClick}
+                    className={`p-2 rounded-full transition-colors ${
+                      isFavorited
+                        ? "bg-red-100 text-red-600"
+                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                    }`}
+                  >
+                    <Heart
+                      size={28}
+                      fill={isFavorited ? "currentColor" : "none"}
+                    />
+                  </button>
+
+                  {/* Rating stars */}
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => handleRatingClick(star)}
+                        className="transition-colors"
+                      >
+                        <Star
+                          size={24}
+                          className={
+                            rating >= star ? "text-yellow-400" : "text-gray-300"
+                          }
+                          fill={rating >= star ? "currentColor" : "none"}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* --- 7. Ingredients --- */}
+              <div>
+                <p className="text-sm text-gray-600 font-semibold mb-2">
+                  一般材料
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {dishDetail.ingredients?.main?.length > 0 ? (
+                    dishDetail.ingredients.main.map((ing, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        {ing.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-500 text-sm">ー</span>
                   )}
                 </div>
               </div>
+
+              {/* --- 8. Taste --- */}
+              <div>
+                <p className="text-sm text-gray-600 font-semibold mb-2">味</p>
+                <div className="flex flex-wrap gap-2">
+                  {dishDetail.taste ? (
+                    dishDetail.taste.split(", ").map((flavor, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        {flavor}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-500 text-sm">ー</span>
+                  )}
+                </div>
+              </div>
+
+              {/* --- 9. Price --- */}
+              <div>
+                <p className="text-sm text-gray-600 font-semibold mb-2">
+                  値段の範囲
+                </p>
+                <div className="flex gap-2">
+                  <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-lg font-bold">
+                    {priceText}
+                  </span>
+                </div>
+              </div>
+
+              {/* Thumbnails - Below info */}
+              {dishDetail.images && dishDetail.images.length > 1 && (
+                <div className="flex gap-3 mt-4 overflow-x-auto pt-4 border-t">
+                  {dishDetail.images.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setThumbIndex(index)}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                        index === thumbIndex
+                          ? "border-blue-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      <img
+                        src={img.image_url}
+                        className="w-full h-full object-cover"
+                        alt={`Thumbnail ${index + 1}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

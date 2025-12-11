@@ -242,7 +242,7 @@ function Section({ title, items, type, navigate }) {
                     restaurant={item.restaurant_name}
                     imageUrl={item.primary_image_url}
                     price={item.price}
-                    onClick={() => navigate(`/dish/${item.menu_id}`)}
+                    onClick={() => navigate(`/menu/${item.menu_id}`)}
                   />
                 );
               if (type === "food") {
