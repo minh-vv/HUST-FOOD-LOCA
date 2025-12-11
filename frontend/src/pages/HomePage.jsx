@@ -95,7 +95,7 @@ export default function HomePage() {
             <p className="text-gray-600 mb-4">{error}</p>
             <button
               onClick={fetchHomeData}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              className="bg-orange-400 text-white px-6 py-2 rounded hover:bg-orange-500"
             >
               再試行
             </button>
@@ -115,7 +115,7 @@ export default function HomePage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={handleKeyPress}
-          className="border px-4 py-2 rounded flex-1"
+          className="border border-gray-300 hover:border-orange-400 focus:border-orange-500 focus:outline-none px-4 py-2 rounded flex-1"
         />
         <button
           onClick={handleSearchClick}
@@ -124,7 +124,7 @@ export default function HomePage() {
         >
           {isSearching ? "検索中..." : "検索"}
         </button>
-        <button className="border px-4 py-2 rounded hover:bg-blue-600 hover:text-white bg-yellow-100">
+        <button className="border px-4 py-2 rounded hover:bg-orange-400 hover:text-white bg-yellow-100">
           フィルター
         </button>
       </div>
@@ -207,12 +207,9 @@ function Section({ title, items, type, navigate }) {
       <div className="max-w-5xl mx-auto">
         {/* Header với title và nút "Xem thêm" */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold cursor-pointer hover:text-blue-600 hover:underline transition-colors">
+          <h2 className="text-xl font-bold cursor-pointer hover:text-orange-600 hover:underline transition-colors">
             {title}
           </h2>
-          <button className="text-blue-600 font-medium hover:text-blue-800 hover:underline">
-            もっと見る
-          </button>
         </div>
 
         {/* Container chứa nút trái, carousel, nút phải */}
@@ -242,7 +239,7 @@ function Section({ title, items, type, navigate }) {
                     restaurant={item.restaurant_name}
                     imageUrl={item.primary_image_url}
                     price={item.price}
-                    onClick={() => navigate(`/menu/${item.menu_id}`)}
+                    onClick={() => navigate(`/dish/${item.menu_id}`)}
                   />
                 );
               if (type === "food") {
@@ -371,13 +368,6 @@ function MenuCard({ dish, restaurant, imageUrl, price, onClick }) {
   );
 }
 
-function SeeMoreCard() {
-  return (
-    <div className="w-52 h-48 flex-shrink-0 flex items-center justify-center border rounded-lg bg-blue-50 cursor-pointer hover:bg-blue-100">
-      <p className="text-blue-700 font-medium">もっと見る</p>
-    </div>
-  );
-}
 
 function SearchResultCard({ item, onClick }) {
   return (

@@ -41,6 +41,7 @@ export default function DishDetailPage() {
 
   const [filter, setFilter] = useState("all");
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [thumbIndex, setThumbIndex] = useState(0);
 
   const [editModal, setEditModal] = useState({
     open: false,
@@ -307,7 +308,7 @@ export default function DishDetailPage() {
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         <div className="text-sm text-gray-500 flex items-center gap-2">
           <button
-            className="hover:text-blue-600"
+            className="hover:text-orange-600"
             onClick={() => navigate(`/dish/${menuId}`)}
           >
             メニュー
@@ -347,12 +348,40 @@ export default function DishDetailPage() {
                 className="relative w-full h-[340px] bg-gray-100 rounded-xl overflow-hidden cursor-zoom-in"
                 onClick={() => setLightboxOpen(true)}
               >
-                {dishDetail.image_url ? (
-                  <img
-                    src={dishDetail.image_url}
-                    alt={dishDetail.name}
-                    className="w-full h-full object-cover"
-                  />
+                {dishDetail.images?.length ? (
+                  <>
+                    <img
+                      src={dishDetail.images[thumbIndex]?.image_url}
+                      alt={dishDetail.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {dishDetail.images.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setThumbIndex((prev) =>
+                              prev === 0 ? dishDetail.images.length - 1 : prev - 1
+                            );
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                        >
+                          ❮
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setThumbIndex((prev) =>
+                              prev === dishDetail.images.length - 1 ? 0 : prev + 1
+                            );
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-100"
+                        >
+                          ❯
+                        </button>
+                      </>
+                    )}
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     画像なし
@@ -363,6 +392,26 @@ export default function DishDetailPage() {
                   クリックしてズーム
                 </div>
               </div>
+
+              {dishDetail.images?.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {dishDetail.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setThumbIndex(idx)}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                        thumbIndex === idx ? "border-blue-500" : "border-gray-300"
+                      }`}
+                    >
+                      <img
+                        src={img.image_url}
+                        className="w-full h-full object-cover"
+                        alt={`Thumbnail ${idx + 1}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="flex items-center justify-between text-sm text-gray-700">
                 <span className="font-semibold">参考価格</span>

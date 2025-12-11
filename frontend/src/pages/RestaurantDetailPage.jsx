@@ -87,7 +87,7 @@ export default function RestaurantDetailPage() {
             <p className="text-gray-600 mb-4">{error}</p>
             <button
               onClick={fetchRestaurantDetail}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              className="bg-orange-400 text-white px-6 py-2 rounded hover:bg-orange-500"
             >
               再試行
             </button>
