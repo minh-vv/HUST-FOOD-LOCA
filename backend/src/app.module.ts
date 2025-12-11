@@ -8,6 +8,7 @@ import { SearchModule } from './search/search.module';
 import { HomeModule } from './home/home.module';
 import { MenuModule } from './menu/menu.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
+import { CmtModule } from './comment/cmt.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
     HomeModule,
     MenuModule,
     RestaurantModule,
+    CmtModule,
   ],
   controllers: [AppController],
   providers: [AppService],
