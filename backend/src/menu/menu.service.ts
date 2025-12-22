@@ -104,7 +104,7 @@ export class MenuService {
       }
     });
 
-    const dishName = `${menu.restaurant.restaurant_name}`;
+    const dishName = menu.menu_name || menu.restaurant.restaurant_name;
 
     return {
       id: menu.menu_id,
