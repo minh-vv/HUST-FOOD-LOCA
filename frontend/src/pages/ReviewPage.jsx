@@ -322,7 +322,7 @@ export default function DishDetailPage() {
             <div className="bg-white rounded-2xl shadow-md border p-6 space-y-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {dishDetail.name || "料理名"}
+                  {dishDetail.menu_name || dishDetail.name || "料理名"}
                 </h1>
                 <p className="text-gray-600 mt-1">
                   {dishDetail.restaurant?.name || "レストラン名"} ·{" "}
