@@ -22,6 +22,7 @@ model User {
   reviews             Review[]
   allergies           UserAllergy[]
   favorites           UserFavorite[]
+  restaurantFavorites RestaurantFavorite[]
   saved               UserSaved[]
 
   @@map("users")
@@ -56,17 +57,18 @@ model UserAllergy {
 }
 
 model Restaurant {
-  restaurant_id        Int               @id @default(autoincrement())
-  restaurant_name      String            @db.VarChar(200)
-  address              String?           @db.Text
+  restaurant_id        Int                   @id @default(autoincrement())
+  restaurant_name      String                @db.VarChar(200)
+  address              String?               @db.Text
   average_service_time Int?
-  google_map_url       String?           @db.VarChar(255)
-  website_url          String?           @db.VarChar(255)
-  description          String?           @db.Text
-  created_at           DateTime          @default(now())
-  updated_at           DateTime          @default(now()) @updatedAt
+  google_map_url       String?               @db.VarChar(255)
+  website_url          String?               @db.VarChar(255)
+  description          String?               @db.Text
+  created_at           DateTime              @default(now())
+  updated_at           DateTime              @default(now()) @updatedAt
   images               RestaurantImage[]
   menu                 RestaurantMenu[]
+  favorites            RestaurantFavorite[]
 
   @@map("restaurants")
 }
@@ -284,4 +286,18 @@ model MenuImages {
 
   @@index([menu_id], map: "idx_menu_id")
   @@map("menu_images")
+}
+
+model RestaurantFavorite {
+  favorite_id   Int        @id @default(autoincrement())
+  user_id       Int
+  restaurant_id Int
+  created_at    DateTime   @default(now())
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  user          User       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, restaurant_id], name: "unique_user_restaurant_favorite")
+  @@index([restaurant_id])
+  @@index([user_id])
+  @@map("restaurant_favorites")
 }

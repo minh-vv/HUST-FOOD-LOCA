@@ -3,13 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class HomeService {
-	constructor(private prisma: PrismaService) {}
+	constructor(private prisma: PrismaService) { }
 
 	/**
 	 * Lấy danh sách món ăn trending
 	 * @param limit - số lượng món cần lấy
 	 */
 	async getTrendingDishes(limit = 6) {
+		// First get dishes
 		const dishes = await this.prisma.dish.findMany({
 			take: limit,
 			include: {
@@ -21,12 +22,33 @@ export class HomeService {
 			orderBy: { dish_id: 'desc' },
 		});
 
-		return dishes.map((d) => ({
-			dish_id: d.dish_id,
-			dish_name: d.dish_name,
-			primary_image_url: d.images?.[0]?.image_url ?? null,
-			cuisine_type: d.cuisine_type ?? null,
-		}));
+		// For each dish, try to find a related menu item by matching dish_name with menu_name
+		const enrichedDishes = await Promise.all(
+			dishes.map(async (d) => {
+				// Try to find a menu item with the same name
+				const relatedMenu = await this.prisma.restaurantMenu.findFirst({
+					where: {
+						menu_name: d.dish_name,
+						is_available: true,
+					},
+					select: {
+						menu_id: true,
+						restaurant_id: true,
+					},
+				});
+
+				return {
+					dish_id: d.dish_id,
+					dish_name: d.dish_name,
+					primary_image_url: d.images?.[0]?.image_url ?? null,
+					cuisine_type: d.cuisine_type ?? null,
+					menu_id: relatedMenu?.menu_id ?? null,
+					restaurant_id: relatedMenu?.restaurant_id ?? null,
+				};
+			}),
+		);
+
+		return enrichedDishes;
 	}
 
 	/**
