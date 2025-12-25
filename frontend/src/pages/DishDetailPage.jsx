@@ -12,11 +12,13 @@ export default function DishDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false); // (5)
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [rating, setRating] = useState(0); // (6)
   const [thumbIndex, setThumbIndex] = useState(0); // điều hướng thumbnail
 
   useEffect(() => {
     fetchDishDetail();
+    checkFavoriteStatus();
   }, [menuId]);
 
   const fetchDishDetail = async () => {
@@ -37,7 +39,65 @@ export default function DishDetailPage() {
     }
   };
 
-  const handleFavoriteClick = () => setIsFavorited((p) => !p);
+  // Check if this menu is already favorited
+  const checkFavoriteStatus = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return; // Not logged in
+
+      const res = await fetch(`${API_BASE_URL}/favorites/menu/${menuId}/check`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsFavorited(data.data?.is_favorited || false);
+      }
+    } catch (err) {
+      console.error("Error checking favorite status:", err);
+    }
+  };
+
+  // Handle favorite button click - call API to add/remove
+  const handleFavoriteClick = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("お気に入りを追加するにはログインしてください");
+      return;
+    }
+
+    setIsFavoriteLoading(true);
+    try {
+      const method = isFavorited ? "DELETE" : "POST";
+      const res = await fetch(`${API_BASE_URL}/favorites/menu/${menuId}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setIsFavorited(!isFavorited);
+      } else {
+        const data = await res.json();
+        // If already favorited or not found, just update state
+        if (res.status === 409) {
+          setIsFavorited(true);
+        } else if (res.status === 404) {
+          setIsFavorited(false);
+        } else {
+          console.error("Favorite error:", data.message);
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
   const handleRatingClick = (star) => setRating(star);
 
   const handleThumbLeft = () => {
@@ -142,11 +202,10 @@ export default function DishDetailPage() {
                     <button
                       key={idx}
                       onClick={() => setThumbIndex(idx)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-                        thumbIndex === idx
-                          ? "border-blue-500"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${thumbIndex === idx
+                        ? "border-blue-500"
+                        : "border-gray-300"
+                        }`}
                     >
                       <img
                         src={img.image_url}
@@ -172,15 +231,17 @@ export default function DishDetailPage() {
                   {/* Favorite */}
                   <button
                     onClick={handleFavoriteClick}
-                    className={`p-2 rounded-full transition-colors ${
-                      isFavorited
-                        ? "bg-red-100 text-red-600"
-                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                    }`}
+                    disabled={isFavoriteLoading}
+                    className={`p-2 rounded-full transition-colors ${isFavorited
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                      } ${isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={isFavorited ? "お気に入りから削除" : "お気に入りに追加"}
                   >
                     <Heart
                       size={28}
                       fill={isFavorited ? "currentColor" : "none"}
+                      className={isFavoriteLoading ? "animate-pulse" : ""}
                     />
                   </button>
 
@@ -264,11 +325,10 @@ export default function DishDetailPage() {
                     <button
                       key={index}
                       onClick={() => setThumbIndex(index)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-                        index === thumbIndex
-                          ? "border-blue-500"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${index === thumbIndex
+                        ? "border-blue-500"
+                        : "border-gray-300"
+                        }`}
                     >
                       <img
                         src={img.image_url}

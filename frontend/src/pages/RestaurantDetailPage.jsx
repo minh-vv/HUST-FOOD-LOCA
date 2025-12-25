@@ -14,10 +14,12 @@ export default function RestaurantDetailPage() {
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
     fetchRestaurantDetail();
+    checkFavoriteStatus();
   }, [restaurantId]);
 
   const fetchRestaurantDetail = async () => {
@@ -41,6 +43,70 @@ export default function RestaurantDetailPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Check if this restaurant is already favorited
+  const checkFavoriteStatus = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await fetch(
+        `${API_BASE_URL}/favorites/restaurant/${restaurantId}/check`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsFavorited(data.data?.is_favorited || false);
+      }
+    } catch (err) {
+      console.error("Error checking favorite status:", err);
+    }
+  };
+
+  // Handle favorite button click - call API to add/remove
+  const handleFavoriteClick = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("お気に入りを追加するにはログインしてください");
+      return;
+    }
+
+    setIsFavoriteLoading(true);
+    try {
+      const method = isFavorited ? "DELETE" : "POST";
+      const res = await fetch(
+        `${API_BASE_URL}/favorites/restaurant/${restaurantId}`,
+        {
+          method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.ok) {
+        setIsFavorited(!isFavorited);
+      } else {
+        const data = await res.json();
+        if (res.status === 409) {
+          setIsFavorited(true);
+        } else if (res.status === 404) {
+          setIsFavorited(false);
+        } else {
+          console.error("Favorite error:", data.message);
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    } finally {
+      setIsFavoriteLoading(false);
     }
   };
 
@@ -170,16 +236,18 @@ export default function RestaurantDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setIsFavorited((p) => !p)}
-                    className={`p-2 rounded-full transition-colors ${
-                      isFavorited
-                        ? "bg-red-100 text-red-600"
-                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                    }`}
+                    onClick={handleFavoriteClick}
+                    disabled={isFavoriteLoading}
+                    className={`p-2 rounded-full transition-colors ${isFavorited
+                      ? "bg-red-100 text-red-600"
+                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                      } ${isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={isFavorited ? "お気に入りから削除" : "お気に入りに追加"}
                   >
                     <Heart
                       size={28}
                       fill={isFavorited ? "currentColor" : "none"}
+                      className={isFavoriteLoading ? "animate-pulse" : ""}
                     />
                   </button>
 
@@ -250,11 +318,10 @@ export default function RestaurantDetailPage() {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-                        index === currentImageIndex
-                          ? "border-blue-500"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${index === currentImageIndex
+                        ? "border-blue-500"
+                        : "border-gray-300"
+                        }`}
                     >
                       <img
                         src={img.image_url}
