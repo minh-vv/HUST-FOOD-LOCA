@@ -87,6 +87,18 @@ export class HomeService {
 			orderBy: {
 				created_at: 'desc',
 			},
+			include: {
+				menu_images: {
+					select: {
+						image_url: true,
+						is_primary: true,
+						display_order: true,
+					},
+					orderBy: {
+						display_order: 'asc',
+					},
+				},
+			},
 		});
 
 		// Fetch restaurant data separately to avoid schema issues
@@ -96,13 +108,15 @@ export class HomeService {
 					where: { restaurant_id: m.restaurant_id },
 					select: { restaurant_name: true, images: { where: { is_primary: true }, take: 1 } },
 				});
+				const primaryMenuImage =
+					m.menu_images.find((img) => img.is_primary) ?? m.menu_images[0];
 
 				return {
 					menu_id: m.menu_id,
 					restaurant_id: m.restaurant_id,
 					restaurant_name: restaurant?.restaurant_name ?? null,
 					price: m.price ?? null,
-					primary_image_url: restaurant?.images?.[0]?.image_url ?? null,
+					primary_image_url: primaryMenuImage?.image_url ?? null,
 				};
 			}),
 		);
