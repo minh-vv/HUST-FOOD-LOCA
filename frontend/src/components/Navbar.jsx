@@ -39,7 +39,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="flex justify-between items-center py-4 px-6 border-b bg-white">
+    <header className="flex justify-between items-center py-4 px-6 border-b bg-yellow-100">
       {/* Logo */}
       <div
         className="text-2xl font-bold cursor-pointer hover:text-orange-600 transition-colors"
@@ -51,12 +51,26 @@ export default function Navbar() {
       {/* User Info */}
       <div className="flex items-center gap-4">
         {/* Greeting with dropdown under it */}
-        <div className="relative cursor-pointer" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <div
+          className="relative cursor-pointer"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           <span className="px-2 py-1">{userName}さん、こんにちは</span>
           {isOpen && (
             <div className="absolute top-full left-0 mt-2 bg-white shadow-md border rounded w-40 z-10">
-              <div className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors" onClick={() => navigate('/profile')}>プロフィール</div>
-              <div className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors" onClick={handleLogout}>ログアウト</div>
+              <div
+                className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors"
+                onClick={() => navigate("/profile")}
+              >
+                プロフィール
+              </div>
+              <div
+                className="px-3 py-2 hover:bg-orange-100 hover:text-orange-700 cursor-pointer transition-colors"
+                onClick={handleLogout}
+              >
+                ログアウト
+              </div>
             </div>
           )}
         </div>
