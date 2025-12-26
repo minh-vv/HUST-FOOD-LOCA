@@ -89,4 +89,15 @@ export class RestaurantService {
       total_menu_items: menu_items.length,
     };
   }
+  async getRestaurants(limit: number) {
+    return this.prisma.restaurant.findMany({
+      take: limit,
+      orderBy: {
+        created_at: 'desc',
+      },
+      include: {
+        images: true,
+      },
+    });
+  }
 }

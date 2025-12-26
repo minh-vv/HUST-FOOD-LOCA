@@ -4,23 +4,30 @@ import { useEffect, useState } from "react";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
-export default function RelatedRestaurants({ restaurantId }) {
+export default function RelatedRestaurants() {
   const [restaurants, setRestaurants] = useState([]);
   const [index, setIndex] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
-  }, [restaurantId]);
+  }, []);
 
   const fetchData = async () => {
-    const res = await fetch(`${API_BASE_URL}/restaurant?limit=10`);
-    const data = await res.json();
-    setRestaurants(data.data || []);
+    try {
+      const res = await fetch(`${API_BASE_URL}/restaurant?limit=10`);
+      const data = await res.json();
+
+      // ✅ BACKEND TRẢ MẢNG TRỰC TIẾP
+      setRestaurants(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch restaurants:", err);
+    }
   };
 
   const prev = () =>
-    setIndex((i) => (i === 0 ? restaurants.length - 3 : i - 1));
+    setIndex((i) => (i === 0 ? Math.max(restaurants.length - 3, 0) : i - 1));
+
   const next = () => setIndex((i) => (i + 3 >= restaurants.length ? 0 : i + 1));
 
   const visible = restaurants.slice(index, index + 3);
@@ -51,27 +58,36 @@ export default function RelatedRestaurants({ restaurantId }) {
 
         {/* Items */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {visible.map((r) => (
-            <button
-              key={r.restaurant_id}
-              onClick={() => navigate(`/restaurant/${r.restaurant_id}`)}
-              className="border rounded-lg overflow-hidden bg-gray-50 hover:shadow-lg"
-            >
-              <div className="h-40 bg-gray-200 flex items-center justify-center">
-                {r.images?.[0]?.image_url ? (
-                  <img
-                    src={r.images[0].image_url}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  "画像なし"
-                )}
-              </div>
-              <div className="p-3 text-center font-semibold text-gray-700">
-                {r.restaurant_name}
-              </div>
-            </button>
-          ))}
+          {visible.map((r) => {
+            // ✅ ƯU TIÊN ẢNH PRIMARY
+            const imageUrl =
+              r.images?.find((img) => img.is_primary)?.image_url ||
+              r.images?.[0]?.image_url;
+
+            return (
+              <button
+                key={r.restaurant_id}
+                onClick={() => navigate(`/restaurant/${r.restaurant_id}`)}
+                className="border rounded-lg overflow-hidden bg-gray-50 hover:shadow-lg transition"
+              >
+                <div className="h-40 bg-gray-200 flex items-center justify-center">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={r.restaurant_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm">画像なし</span>
+                  )}
+                </div>
+
+                <div className="p-3 text-center font-semibold text-gray-700">
+                  {r.restaurant_name}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
