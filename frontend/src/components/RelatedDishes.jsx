@@ -54,7 +54,7 @@ export default function RelatedDishes({ restaurantId, currentMenuId }) {
   };
 
   const handleDishClick = (menuId) => {
-    navigate(`/dish/${menuId}`);
+    navigate(`/review/${menuId}`);
   };
 
   const visibleDishes = relatedDishes.slice(currentIndex, currentIndex + 3);

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import RelatedRestaurants from "../components/RelatedRestaurants";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -238,11 +237,16 @@ export default function RestaurantDetailPage() {
                   <button
                     onClick={handleFavoriteClick}
                     disabled={isFavoriteLoading}
-                    className={`p-2 rounded-full transition-colors ${isFavorited
-                      ? "bg-red-100 text-red-600"
-                      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                      } ${isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isFavorited ? "お気に入りから削除" : "お気に入りに追加"}
+                    className={`p-2 rounded-full transition-colors ${
+                      isFavorited
+                        ? "bg-red-100 text-red-600"
+                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                    } ${
+                      isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    title={
+                      isFavorited ? "お気に入りから削除" : "お気に入りに追加"
+                    }
                   >
                     <Heart
                       size={28}
@@ -250,24 +254,6 @@ export default function RestaurantDetailPage() {
                       className={isFavoriteLoading ? "animate-pulse" : ""}
                     />
                   </button>
-
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setRating(star)}
-                        className="transition-colors"
-                      >
-                        <Star
-                          size={24}
-                          className={
-                            rating >= star ? "text-yellow-400" : "text-gray-300"
-                          }
-                          fill={rating >= star ? "currentColor" : "none"}
-                        />
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -318,10 +304,11 @@ export default function RestaurantDetailPage() {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${index === currentImageIndex
-                        ? "border-blue-500"
-                        : "border-gray-300"
-                        }`}
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                        index === currentImageIndex
+                          ? "border-blue-500"
+                          : "border-gray-300"
+                      }`}
                     >
                       <img
                         src={img.image_url}
@@ -338,13 +325,15 @@ export default function RestaurantDetailPage() {
 
         {/* MENU ITEMS */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Menu Items</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            メニュー項目
+          </h2>
           {restaurant.menu_items && restaurant.menu_items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {restaurant.menu_items.map((item) => (
                 <button
                   key={item.menu_id}
-                  onClick={() => navigate(`/dish/${item.menu_id}`)}
+                  onClick={() => navigate(`/review/${item.menu_id}`)}
                   className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow text-left bg-gray-50"
                 >
                   <div className="relative h-48 bg-gray-300 overflow-hidden">

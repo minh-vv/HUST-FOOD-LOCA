@@ -35,7 +35,7 @@ export class RestaurantMenuItemDto {
    * Menu name (constructed from dish info or menu name)
    * @type {string}
    */
-  name: string;
+  name?: string;
 
   /**
    * Menu price
