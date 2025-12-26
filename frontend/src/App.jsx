@@ -14,7 +14,7 @@ export default function App() {
       <Route path="/home" element={<HomePage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/dish/:menuId" element={<DishDetailPage />} />
+      <Route path="/dish/:dishId" element={<DishDetailPage />} />
       <Route path="/review/:menuId" element={<ReviewPage />} />
       <Route
         path="/restaurant/:restaurantId"
@@ -23,4 +23,3 @@ export default function App() {
     </Routes>
   );
 }
-

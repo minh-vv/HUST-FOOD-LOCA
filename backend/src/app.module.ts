@@ -11,6 +11,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
 import { CmtModule } from './comment/cmt.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { SavedModule } from './saved/saved.module';
+import { DishModule } from './dish/dish.module';
 
 @Module({
   imports: [
@@ -26,10 +27,9 @@ import { SavedModule } from './saved/saved.module';
     CmtModule,
     FavoritesModule,
     SavedModule,
+    DishModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
-
-
+export class AppModule {}

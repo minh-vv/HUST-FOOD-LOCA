@@ -131,7 +131,10 @@ export default function HomePage() {
 
       {/* Hiển thị kết quả tìm kiếm */}
       {searchResults && (
-        <SearchResultsSection searchResults={searchResults} navigate={navigate} />
+        <SearchResultsSection
+          searchResults={searchResults}
+          navigate={navigate}
+        />
       )}
 
       {/* Hiển thị trending khi không search */}
@@ -239,7 +242,7 @@ function Section({ title, items, type, navigate }) {
                     restaurant={item.restaurant_name}
                     imageUrl={item.primary_image_url}
                     price={item.price}
-                    onClick={() => navigate(`/dish/${item.menu_id}`)}
+                    onClick={() => navigate(`/review/${item.menu_id}`)}
                   />
                 );
               if (type === "food") {
@@ -249,12 +252,7 @@ function Section({ title, items, type, navigate }) {
                     title={item.dish_name}
                     imageUrl={item.primary_image_url}
                     subtitle={item.cuisine_type}
-                    onClick={() => {
-                      // If dish has menu_id, navigate to dish detail, otherwise navigate to search
-                      if (item.menu_id) {
-                        navigate(`/dish/${item.menu_id}`);
-                      }
-                    }}
+                    onClick={() => navigate(`/dish/${item.dish_id}`)}
                   />
                 );
               }
@@ -368,7 +366,6 @@ function MenuCard({ dish, restaurant, imageUrl, price, onClick }) {
   );
 }
 
-
 function SearchResultCard({ item, onClick }) {
   return (
     <div
@@ -388,7 +385,9 @@ function SearchResultCard({ item, onClick }) {
       </div>
       <p className="mt-2 text-sm font-medium">{item.name}</p>
       {item.address && <p className="text-xs text-gray-600">{item.address}</p>}
-      {item.price && <p className="text-xs text-orange-600">{item.price} VND</p>}
+      {item.price && (
+        <p className="text-xs text-orange-600">{item.price} VND</p>
+      )}
       {item.description && (
         <p className="text-xs text-gray-500 mt-1">
           {item.description?.substring(0, 50)}...
@@ -449,9 +448,13 @@ function SearchResultsSection({ searchResults, navigate }) {
                 <SearchResultCard
                   key={item.id}
                   item={item}
-                  onClick={() => navigate(
-                    item.restaurant_id ? `/restaurant/${item.restaurant_id}` : `/dish/${item.id}`
-                  )}
+                  onClick={() =>
+                    navigate(
+                      item.restaurant_id
+                        ? `/restaurant/${item.restaurant_id}`
+                        : `/dish/${item.id}`
+                    )
+                  }
                 />
               ))}
             </div>
@@ -480,12 +483,15 @@ function SearchResultsSection({ searchResults, navigate }) {
   return (
     <div className="max-w-5xl mx-auto mt-6">
       {renderPaginatedSection("料理", dishes, dishPage, setDishPage)}
-      {renderPaginatedSection("レストラン", restaurants, restaurantPage, setRestaurantPage)}
+      {renderPaginatedSection(
+        "レストラン",
+        restaurants,
+        restaurantPage,
+        setRestaurantPage
+      )}
 
       {dishes.length === 0 && restaurants.length === 0 && (
-        <p className="text-center text-gray-500 mt-8">
-          検索結果が存在しません
-        </p>
+        <p className="text-center text-gray-500 mt-8">検索結果が存在しません</p>
       )}
     </div>
   );

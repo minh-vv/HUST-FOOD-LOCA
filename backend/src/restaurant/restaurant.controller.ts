@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { RestaurantService } from './restaurant.service';
 import { RestaurantDetailResponseDto } from './dto/restaurant-detail-response.dto';
@@ -23,6 +24,16 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('api/restaurant')
 export class RestaurantController {
   constructor(private readonly restaurantService: RestaurantService) {}
+
+  /**
+   * ✅ GET /api/restaurant
+   * Retrieves a list of restaurants.
+   * @query limit Optional number of restaurants to return (default: 10)
+   */
+  @Get()
+  async getRestaurants(@Query('limit') limit?: string) {
+    return this.restaurantService.getRestaurants(limit ? Number(limit) : 10);
+  }
 
   /**
    * GET /api/restaurant/:id
