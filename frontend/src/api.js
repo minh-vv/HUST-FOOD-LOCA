@@ -89,3 +89,32 @@ export async function getUsers() {
   const res = await fetch(`${API_URL}/api/users`);
   return res.json();
 }
+/**
+ * @param {{
+ *   flavorIds?: number[],
+ *   ingredientIds?: number[]
+ * }} params
+ */
+export async function filterMenus({ flavorIds = [], ingredientIds = [] }) {
+  const params = new URLSearchParams();
+
+  if (flavorIds.length > 0) {
+    params.append("flavorIds", flavorIds.join(","));
+  }
+
+  if (ingredientIds.length > 0) {
+    params.append("ingredientIds", ingredientIds.join(","));
+  }
+
+  const res = await fetch(
+    `${API_URL}/api/menus/filter?${params.toString()}`
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "フィルターに失敗しました");
+  }
+
+  return data;
+}
