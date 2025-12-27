@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({ onLogoClick }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState("");
@@ -43,7 +43,10 @@ export default function Navbar() {
       {/* Logo */}
       <div
         className="text-2xl font-bold cursor-pointer hover:text-orange-600 transition-colors"
-        onClick={() => navigate("/home")}
+        onClick={() => {
+          onLogoClick?.();   // ⭐ reset filter + search
+          navigate("/home");
+        }}
       >
         ハスト・フード・ロカ
       </div>

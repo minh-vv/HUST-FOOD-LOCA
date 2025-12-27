@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import FilterDropdown from "../components/FilterDropdown";
 
-const API_BASE_URL = "http://localhost:3000/api/home";
+const API_BASE_URL="http://localhost:3000/api/home"
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -15,6 +16,26 @@ export default function HomePage() {
   const [trendMenus, setTrendMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const filterRef = useRef(null);
+  const [menus, setMenus] = useState([]);
+  const [showFilterAlert, setShowFilterAlert] = useState(false);
+  const [selectedFlavors, setSelectedFlavors] = useState([]);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [filterResults, setFilterResults] = useState([]);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const filteredDishes = filterResults;
+
+  const filteredRestaurants = Array.from(
+    new Map(
+      filterResults
+        .filter(m => m.restaurant)
+        .map(m => [
+          m.restaurant.restaurant_id,
+          m.restaurant
+        ])
+    ).values()
+  );
 
   const handleSearchClick = async () => {
     if (searchQuery.trim().length === 0) {
@@ -37,6 +58,39 @@ export default function HomePage() {
     } finally {
       setIsSearching(false);
     }
+  };
+  const handleFilterClick = async ({ flavorIds, ingredientIds }) => {
+    console.log("Filters:", flavorIds, ingredientIds);
+
+    if (flavorIds.length === 0 && ingredientIds.length === 0) {
+    setFilterResults([]);
+    return;
+  }
+    try {
+      const params = new URLSearchParams();
+      if (flavorIds.length) params.append("flavorIds", flavorIds.join(","));
+      if (ingredientIds.length) params.append("ingredientIds", ingredientIds.join(","));
+
+      const response = await fetch(
+        `http://localhost:3000/api/menus/filter?${params.toString()}`
+      );
+
+      const data = await response.json();
+      console.log("API data:", data);
+
+      setFilterResults(data);
+      setSearchResults(null); // ❗ tắt search
+    } catch (err) {
+      console.error("Filter error:", err);
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+  const resetHomeState = () => {
+    setFilterResults([]);
+    setSearchResults(null);
+    setSearchQuery("");
+    setShowFilter(false);
   };
 
   const handleKeyPress = (e) => {
@@ -104,9 +158,73 @@ export default function HomePage() {
       );
     }
   };
+  function FilterCarousel({ title, items, renderItem, getKey }) {
+    const ITEMS_PER_PAGE = 4;
+    const [page, setPage] = useState(0);
+
+    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+    const startIndex = page * ITEMS_PER_PAGE;
+    const visibleItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    useEffect(() => {
+      setPage(0); // reset khi items thay đổi
+    }, [items.length]);
+
+    if (items.length === 0) {
+      return (
+        <div className="mb-8">
+          <h4 className="text-md font-bold mb-3">{title}</h4>
+          <p className="text-gray-500">データがありません</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-8">
+        <h4 className="text-md font-bold mb-3">{title}</h4>
+
+        <div className="flex items-center gap-4">
+          {/* Nút trái */}
+          <button
+            onClick={() => setPage(p => Math.max(p - 1, 0))}
+            disabled={page === 0}
+            className={`w-9 h-9 rounded-full flex items-center justify-center
+              ${
+                page === 0
+                  ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-400 text-white hover:bg-orange-500"
+              }`}
+          >
+            &#8592;
+          </button>
+
+          {/* Items */}
+          <div className="flex gap-6 overflow-hidden flex-1">
+            {visibleItems.map(item => renderItem(item))}
+          </div>
+
+          {/* Nút phải */}
+          <button
+            onClick={() => setPage(p => Math.min(p + 1, totalPages - 1))}
+            disabled={page === totalPages - 1}
+            className={`w-9 h-9 rounded-full flex items-center justify-center
+              ${
+                page === totalPages - 1
+                  ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-400 text-white hover:bg-orange-500"
+              }`}
+          >
+            &#8594;
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full">
-      <Navbar />
+      <Navbar onLogoClick={resetHomeState}/>
 
       <div className="max-w-5xl mx-auto mt-6 flex items-center gap-4">
         <input
@@ -124,10 +242,32 @@ export default function HomePage() {
         >
           {isSearching ? "検索中..." : "検索"}
         </button>
-        <button className="border px-4 py-2 rounded hover:bg-orange-400 hover:text-white bg-yellow-100">
-          フィルター
-        </button>
-      </div>
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setShowFilter(prev => !prev)}
+              className="border px-4 py-2 rounded bg-orange-400 text-white hover:bg-blue-600"
+            >
+              フィルター
+            </button>
+
+            {showFilter && (
+                          <FilterDropdown
+                onClose={() => setShowFilter(false)}
+                onApply={(filters) => {
+                  handleFilterClick(filters);
+                  setShowFilter(false);
+                }}
+              />
+            )}
+          </div>  
+        </div>
+        {showFilterAlert && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded shadow-md z-50">
+          フィルター結果
+        </div>
+      )}
+
+
 
       {/* Hiển thị kết quả tìm kiếm */}
       {searchResults && (
@@ -137,8 +277,48 @@ export default function HomePage() {
         />
       )}
 
+      {filterResults.length > 0 && (
+  <div className="max-w-5xl mx-auto mt-6">
+    <h3 className="text-lg font-bold mb-4">フィルター結果</h3>
+
+    <FilterCarousel
+      title="料理"
+      items={filteredDishes}
+      renderItem={(menu) => (
+        <MenuCard
+          key={menu.menu_id}
+          dish={menu.menu_name}
+          restaurant={menu.restaurant?.restaurant_name}
+          imageUrl={menu.menu_images?.[0]?.image_url}
+          price={menu.price}
+        />
+      )}
+    />
+
+    <FilterCarousel
+      title="レストラン"
+      items={filteredRestaurants}
+      renderItem={(r) => (
+        <SearchResultCard
+          key={r.restaurant_id}
+          item={{
+            name: r.restaurant_name,
+            image: r.primary_image_url,
+            address: r.address,
+            description: r.description,
+          }}
+          onClick={() => setSelectedItem(r)}
+        />
+      )}
+    />
+  </div>
+)}
+
+
+
+
       {/* Hiển thị trending khi không search */}
-      {!searchResults && (
+      {!searchResults && filterResults.length === 0 && (
         <>
           <Section
             title="トレンド料理"
