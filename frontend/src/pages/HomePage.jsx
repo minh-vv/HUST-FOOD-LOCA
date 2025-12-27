@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-
+import FilterDropdown from "../components/FilterDropdown";
 
 const API_BASE_URL="http://localhost:3000/api/home"
 
@@ -14,7 +14,26 @@ export default function HomePage() {
   const [trendMenus, setTrendMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+  const [showFilter, setShowFilter] = useState(false);
+  const filterRef = useRef(null);
+  const [menus, setMenus] = useState([]);
+  const [showFilterAlert, setShowFilterAlert] = useState(false);
+  const [selectedFlavors, setSelectedFlavors] = useState([]);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [filterResults, setFilterResults] = useState([]);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const filteredDishes = filterResults;
+
+  const filteredRestaurants = Array.from(
+    new Map(
+      filterResults
+        .filter(m => m.restaurant)
+        .map(m => [
+          m.restaurant.restaurant_id,
+          m.restaurant
+        ])
+    ).values()
+  );
   const handleSearchClick = async () => {
     if (searchQuery.trim().length === 0) {
       setSearchResults(null);
@@ -35,6 +54,34 @@ export default function HomePage() {
       setIsSearching(false);
     }
   };
+  const handleFilterClick = async ({ flavorIds, ingredientIds }) => {
+    console.log("Filters:", flavorIds, ingredientIds);
+
+    if (flavorIds.length === 0 && ingredientIds.length === 0) {
+    setFilterResults([]);
+    return;
+  }
+    try {
+      const params = new URLSearchParams();
+      if (flavorIds.length) params.append("flavorIds", flavorIds.join(","));
+      if (ingredientIds.length) params.append("ingredientIds", ingredientIds.join(","));
+
+      const response = await fetch(
+        `http://localhost:3000/api/menus/filter?${params.toString()}`
+      );
+
+      const data = await response.json();
+      console.log("API data:", data);
+
+      setFilterResults(data);
+      setSearchResults(null); // ❗ tắt search
+    } catch (err) {
+      console.error("Filter error:", err);
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -119,10 +166,32 @@ export default function HomePage() {
         >
           {isSearching ? "検索中..." : "検索"}
         </button>
-        <button className="border px-4 py-2 rounded hover:bg-blue-600 hover:text-white bg-yellow-100">
-          フィルター
-        </button>
-      </div>
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setShowFilter(prev => !prev)}
+              className="border px-4 py-2 rounded bg-orange-400 text-white hover:bg-blue-600"
+            >
+              フィルター
+            </button>
+
+            {showFilter && (
+                          <FilterDropdown
+                onClose={() => setShowFilter(false)}
+                onApply={(filters) => {
+                  handleFilterClick(filters);
+                  setShowFilter(false);
+                }}
+              />
+            )}
+          </div>  
+        </div>
+        {showFilterAlert && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded shadow-md z-50">
+          フィルター結果
+        </div>
+      )}
+
+
 
       {/* Hiển thị kết quả tìm kiếm */}
       {searchResults && (
@@ -169,8 +238,61 @@ export default function HomePage() {
         </div>
       )}
 
+      {filterResults.length > 0 && (
+  <div className="max-w-5xl mx-auto mt-6">
+    <h3 className="text-lg font-bold mb-4">フィルター結果</h3>
+
+    {/* ===== 料理 ===== */}
+    <div className="mb-8">
+      <h4 className="text-md font-bold mb-3">料理</h4>
+
+      {filteredDishes.length > 0 ? (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {filteredDishes.map(menu => (
+            <MenuCard
+              key={menu.menu_id}
+              dish={menu.menu_name}
+              restaurant={menu.restaurant?.restaurant_name}
+              imageUrl={menu.menu_images?.[0]?.image_url}
+              price={menu.price}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500">データがありません</p>
+      )}
+    </div>
+
+    {/* ===== レストラン ===== */}
+    <div className="mb-8">
+      <h4 className="text-md font-bold mb-3">レストラン</h4>
+
+      {filteredRestaurants.length > 0 ? (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {filteredRestaurants.map(r => (
+            <SearchResultCard
+              key={r.restaurant_id}
+              item={{
+                name: r.restaurant_name,
+                image: r.primary_image_url,
+                address: r.address,
+                description: r.description,
+              }}
+              onClick={() => setSelectedItem(r)}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500">データがありません</p>
+      )}
+    </div>
+  </div>
+)}
+
+
+
       {/* Hiển thị trending khi không search */}
-      {!searchResults && (
+      {!searchResults && filterResults.length === 0 && (
         <>
           <Section title="トレンド料理" items={trendFoods} type="food" />
           <Section title="トレンドレストラン" items={trendRestaurants} type="restaurant" />
