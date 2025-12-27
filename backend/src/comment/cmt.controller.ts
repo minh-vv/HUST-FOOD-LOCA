@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe, BadRequestException } from '@nestjs/common';
 import { CmtService } from './cmt.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -14,7 +14,7 @@ class UpdateReviewDto {
 	comment?: string;
 }
 
-@Controller('comments')
+@Controller('api/comments')
 export class CmtController {
 	constructor(private readonly cmtService: CmtService) {}
 
@@ -32,30 +32,85 @@ export class CmtController {
 		};
 	}
 
-	// POST /comments
+	// POST /api/comments
 	@UseGuards(JwtAuthGuard)
 	@Post()
 	async create(
-		@Body() dto: CreateReviewDto,
+		@Body() dto: any,
 		@CurrentUser() user: any,
 	) {
-		const created = await this.cmtService.createReview(user.user_id, dto as any);
+		// Validate và lọc properties - chỉ cho phép menu_id, rating, comment
+		const allowedKeys = ['menu_id', 'rating', 'comment'];
+		const hasInvalidKeys = Object.keys(dto).some(key => !allowedKeys.includes(key));
+		
+		if (hasInvalidKeys) {
+			const invalidKeys = Object.keys(dto).filter(key => !allowedKeys.includes(key));
+			throw new BadRequestException(`Invalid properties: ${invalidKeys.join(', ')}`);
+		}
+
+		const cleanDto = {
+			menu_id: dto.menu_id,
+			rating: dto.rating,
+			comment: dto.comment,
+		};
+
+		const created = await this.cmtService.createReview(user.user_id, cleanDto as any);
 		return { data: created };
 	}
 
-	// PUT /comments/:id
+	// PUT /api/comments/:id
 	@UseGuards(JwtAuthGuard)
 	@Put(':id')
 	async update(
 		@Param('id', ParseIntPipe) id: number,
-		@Body() dto: UpdateReviewDto,
+		@Body() dto: any,
 		@CurrentUser() user: any,
 	) {
-		const updated = await this.cmtService.updateReview(id, user.user_id, dto as any);
+		// Validate - chỉ cho phép rating, comment (không được sửa menu_id)
+		const allowedKeys = ['rating', 'comment'];
+		const hasInvalidKeys = Object.keys(dto).some(key => !allowedKeys.includes(key));
+		
+		if (hasInvalidKeys) {
+			const invalidKeys = Object.keys(dto).filter(key => !allowedKeys.includes(key));
+			throw new BadRequestException(`Invalid properties: ${invalidKeys.join(', ')}`);
+		}
+
+		const cleanDto = {
+			rating: dto.rating,
+			comment: dto.comment,
+		};
+
+		const updated = await this.cmtService.updateReview(id, user.user_id, cleanDto as any);
 		return { data: updated };
 	}
 
-	// DELETE /comments/:id
+	// PATCH /api/comments/:id (alternative to PUT)
+	@UseGuards(JwtAuthGuard)
+	@Patch(':id')
+	async partialUpdate(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() dto: any,
+		@CurrentUser() user: any,
+	) {
+		// Validate - chỉ cho phép rating, comment (không được sửa menu_id)
+		const allowedKeys = ['rating', 'comment'];
+		const hasInvalidKeys = Object.keys(dto).some(key => !allowedKeys.includes(key));
+		
+		if (hasInvalidKeys) {
+			const invalidKeys = Object.keys(dto).filter(key => !allowedKeys.includes(key));
+			throw new BadRequestException(`Invalid properties: ${invalidKeys.join(', ')}`);
+		}
+
+		const cleanDto = {
+			rating: dto.rating,
+			comment: dto.comment,
+		};
+
+		const updated = await this.cmtService.updateReview(id, user.user_id, cleanDto as any);
+		return { data: updated };
+	}
+
+	// DELETE /api/comments/:id
 	@UseGuards(JwtAuthGuard)
 	@Delete(':id')
 	async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {

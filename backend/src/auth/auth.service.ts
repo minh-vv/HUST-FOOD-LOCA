@@ -23,7 +23,7 @@ export class AuthService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   private buildResetUrl(token: string): string {
     const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(
@@ -259,6 +259,137 @@ export class AuthService {
     this.logger.log(`Password reset for user_id=${record.user_id}`);
     return {
       message: 'パスワードをリセットしました。ログイン画面へお進みください。',
+    };
+  }
+
+  // ==================== Profile Management ====================
+
+  async getFullProfile(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { user_id: userId },
+      select: {
+        user_id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        profile_image_url: true,
+        country: true,
+        created_at: true,
+        allergies: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('ユーザーが見つかりません');
+    }
+
+    return {
+      ...user,
+      allergies: user.allergies.map((a) => a.ingredient.ingredient_name),
+    };
+  }
+
+  async updateProfile(
+    userId: number,
+    dto: {
+      full_name?: string;
+      phone?: string;
+      email?: string;
+      profile_image_url?: string;
+    },
+  ) {
+    // Check if email is being changed and if it's already taken
+    if (dto.email) {
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          email: dto.email,
+          NOT: { user_id: userId },
+        },
+      });
+
+      if (existingUser) {
+        throw new ConflictException(
+          'このメールアドレスは既に使用されています。',
+        );
+      }
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { user_id: userId },
+      data: {
+        full_name: dto.full_name,
+        email: dto.email,
+        profile_image_url: dto.profile_image_url,
+      },
+      select: {
+        user_id: true,
+        username: true,
+        email: true,
+        full_name: true,
+        profile_image_url: true,
+        country: true,
+      },
+    });
+
+    this.logger.log(`Profile updated for user_id=${userId}`);
+
+    return {
+      message: 'プロフィールが更新されました。',
+      user: updatedUser,
+    };
+  }
+
+  async changePassword(
+    userId: number,
+    dto: { current_password: string; new_password: string },
+  ): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('ユーザーが見つかりません');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      dto.current_password,
+      user.password_hash,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('現在のパスワードが正しくありません。');
+    }
+
+    // Validate new password strength
+    this.validatePasswordStrength(dto.new_password);
+
+    // Check if new password is same as old
+    const isSameAsOld = await bcrypt.compare(
+      dto.new_password,
+      user.password_hash,
+    );
+    if (isSameAsOld) {
+      throw new BadRequestException(
+        '新しいパスワードは現在のものと異なる必要があります。',
+      );
+    }
+
+    // Hash and update password
+    const hashedPassword = await bcrypt.hash(dto.new_password, 10);
+    await this.prisma.user.update({
+      where: { user_id: userId },
+      data: { password_hash: hashedPassword },
+    });
+
+    this.logger.log(`Password changed for user_id=${userId}`);
+
+    return {
+      message: 'パスワードが変更されました。',
     };
   }
 }

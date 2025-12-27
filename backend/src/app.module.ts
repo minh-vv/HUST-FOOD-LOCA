@@ -7,6 +7,13 @@ import { AuthModule } from './auth/auth.module';
 import { SearchModule } from './search/search.module';
 import { HomeModule } from './home/home.module';
 import { FilterModule } from './filter/filter.module';
+import { MenuModule } from './menu/menu.module';
+import { RestaurantModule } from './restaurant/restaurant.module';
+import { CmtModule } from './comment/cmt.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { SavedModule } from './saved/saved.module';
+import { DishModule } from './dish/dish.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,6 +24,12 @@ import { FilterModule } from './filter/filter.module';
     SearchModule,
     HomeModule,
     FilterModule,
+    MenuModule,
+    RestaurantModule,
+    CmtModule,
+    FavoritesModule,
+    SavedModule,
+    DishModule,
   ],
   controllers: [AppController],
   providers: [AppService],

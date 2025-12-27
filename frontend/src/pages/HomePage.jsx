@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FilterDropdown from "../components/FilterDropdown";
 
 const API_BASE_URL="http://localhost:3000/api/home"
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -34,6 +36,7 @@ export default function HomePage() {
         ])
     ).values()
   );
+
   const handleSearchClick = async () => {
     if (searchQuery.trim().length === 0) {
       setSearchResults(null);
@@ -42,7 +45,9 @@ export default function HomePage() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`http://localhost:3000/search?q=${encodeURIComponent(searchQuery)}`);
+      const response = await fetch(
+        `http://localhost:3000/search?q=${encodeURIComponent(searchQuery)}`
+      );
       const data = await response.json();
       if (data.success) {
         setSearchResults(data.data);
@@ -81,7 +86,12 @@ export default function HomePage() {
       setIsFiltering(false);
     }
   };
-
+  const resetHomeState = () => {
+    setFilterResults([]);
+    setSearchResults(null);
+    setSearchQuery("");
+    setShowFilter(false);
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -100,11 +110,11 @@ export default function HomePage() {
 
       // Gọi API tổng hợp
       const response = await fetch(`${API_BASE_URL}?limit=10`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
 
       // Map dữ liệu từ API sang state
@@ -117,38 +127,104 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600"></p>
+
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600"></p>
+          </div>
         </div>
-      </div>
-    );
-  }
-  if (error) {
+      );
+    }
+    if (error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <div className="text-red-600 text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">
+              データ取得エラー
+            </h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={fetchHomeData}
+              className="bg-orange-400 text-white px-6 py-2 rounded hover:bg-orange-500"
+            >
+              再試行
+            </button>
+          </div>
+        </div>
+      );
+    }
+  };
+  function FilterCarousel({ title, items, renderItem, getKey }) {
+    const ITEMS_PER_PAGE = 4;
+    const [page, setPage] = useState(0);
+
+    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+    const startIndex = page * ITEMS_PER_PAGE;
+    const visibleItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    useEffect(() => {
+      setPage(0); // reset khi items thay đổi
+    }, [items.length]);
+
+    if (items.length === 0) {
+      return (
+        <div className="mb-8">
+          <h4 className="text-md font-bold mb-3">{title}</h4>
+          <p className="text-gray-500">データがありません</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-red-600 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">データ取得エラー</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchHomeData}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+      <div className="mb-8">
+        <h4 className="text-md font-bold mb-3">{title}</h4>
+
+        <div className="flex items-center gap-4">
+          {/* Nút trái */}
+          <button
+            onClick={() => setPage(p => Math.max(p - 1, 0))}
+            disabled={page === 0}
+            className={`w-9 h-9 rounded-full flex items-center justify-center
+              ${
+                page === 0
+                  ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-400 text-white hover:bg-orange-500"
+              }`}
           >
-            再試行
+            &#8592;
+          </button>
+
+          {/* Items */}
+          <div className="flex gap-6 overflow-hidden flex-1">
+            {visibleItems.map(item => renderItem(item))}
+          </div>
+
+          {/* Nút phải */}
+          <button
+            onClick={() => setPage(p => Math.min(p + 1, totalPages - 1))}
+            disabled={page === totalPages - 1}
+            className={`w-9 h-9 rounded-full flex items-center justify-center
+              ${
+                page === totalPages - 1
+                  ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                  : "bg-orange-400 text-white hover:bg-orange-500"
+              }`}
+          >
+            &#8594;
           </button>
         </div>
       </div>
     );
   }
-  };
+
   return (
-    <div className="px-6 py-4">
-      <Navbar />
+    <div className="w-full h-full">
+      <Navbar onLogoClick={resetHomeState}/>
 
       <div className="max-w-5xl mx-auto mt-6 flex items-center gap-4">
         <input
@@ -157,7 +233,7 @@ export default function HomePage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyPress={handleKeyPress}
-          className="border px-4 py-2 rounded flex-1"
+          className="border border-gray-300 hover:border-orange-400 focus:border-orange-500 focus:outline-none px-4 py-2 rounded flex-1"
         />
         <button
           onClick={handleSearchClick}
@@ -195,114 +271,82 @@ export default function HomePage() {
 
       {/* Hiển thị kết quả tìm kiếm */}
       {searchResults && (
-        <div className="max-w-5xl mx-auto mt-6">
-          {/* Mục Món ăn */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4">料理</h3>
-            {searchResults.dishes?.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {searchResults.dishes.map((dish) => (
-                  <SearchResultCard
-                    key={dish.id}
-                    item={dish}
-                    onClick={() => setSelectedItem(dish)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">データがありません</p>
-            )}
-          </div>
-
-          {/* Mục Nhà hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold mb-4">レストラン</h3>
-            {searchResults.restaurants?.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {searchResults.restaurants.map((restaurant) => (
-                  <SearchResultCard
-                    key={restaurant.id}
-                    item={restaurant}
-                    onClick={() => setSelectedItem(restaurant)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">データがありません</p>
-            )}
-          </div>
-
-          {searchResults.restaurants?.length === 0 && searchResults.dishes?.length === 0 && searchResults.restaurantsWithDishes?.length === 0 && (
-            <p className="text-center text-gray-500 mt-8">検索結果が存在しません</p>
-          )}
-        </div>
+        <SearchResultsSection
+          searchResults={searchResults}
+          navigate={navigate}
+        />
       )}
 
       {filterResults.length > 0 && (
   <div className="max-w-5xl mx-auto mt-6">
     <h3 className="text-lg font-bold mb-4">フィルター結果</h3>
 
-    {/* ===== 料理 ===== */}
-    <div className="mb-8">
-      <h4 className="text-md font-bold mb-3">料理</h4>
-
-      {filteredDishes.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {filteredDishes.map(menu => (
-            <MenuCard
-              key={menu.menu_id}
-              dish={menu.menu_name}
-              restaurant={menu.restaurant?.restaurant_name}
-              imageUrl={menu.menu_images?.[0]?.image_url}
-              price={menu.price}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500">データがありません</p>
+    <FilterCarousel
+      title="料理"
+      items={filteredDishes}
+      renderItem={(menu) => (
+        <MenuCard
+          key={menu.menu_id}
+          dish={menu.menu_name}
+          restaurant={menu.restaurant?.restaurant_name}
+          imageUrl={menu.menu_images?.[0]?.image_url}
+          price={menu.price}
+        />
       )}
-    </div>
+    />
 
-    {/* ===== レストラン ===== */}
-    <div className="mb-8">
-      <h4 className="text-md font-bold mb-3">レストラン</h4>
-
-      {filteredRestaurants.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {filteredRestaurants.map(r => (
-            <SearchResultCard
-              key={r.restaurant_id}
-              item={{
-                name: r.restaurant_name,
-                image: r.primary_image_url,
-                address: r.address,
-                description: r.description,
-              }}
-              onClick={() => setSelectedItem(r)}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500">データがありません</p>
+    <FilterCarousel
+      title="レストラン"
+      items={filteredRestaurants}
+      renderItem={(r) => (
+        <SearchResultCard
+          key={r.restaurant_id}
+          item={{
+            name: r.restaurant_name,
+            image: r.primary_image_url,
+            address: r.address,
+            description: r.description,
+          }}
+          onClick={() => setSelectedItem(r)}
+        />
       )}
-    </div>
+    />
   </div>
 )}
+
 
 
 
       {/* Hiển thị trending khi không search */}
       {!searchResults && filterResults.length === 0 && (
         <>
-          <Section title="トレンド料理" items={trendFoods} type="food" />
-          <Section title="トレンドレストラン" items={trendRestaurants} type="restaurant" />
-          <Section title="トレンドレストランのメニュー" items={trendMenus} type="menu" />
+          <Section
+            title="トレンド料理"
+            items={trendFoods}
+            type="food"
+            navigate={navigate}
+          />
+          <Section
+            title="トレンドレストラン"
+            items={trendRestaurants}
+            type="restaurant"
+            navigate={navigate}
+          />
+          <Section
+            title="トレンドレストランのメニュー"
+            items={trendMenus}
+            type="menu"
+            navigate={navigate}
+          />
         </>
       )}
 
       {/* Detail Modal */}
       {selectedItem && (
-        <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <DetailModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
       )}
     </div>
   );
@@ -310,7 +354,7 @@ export default function HomePage() {
 
 /* ---------------- COMPONENTS ---------------- */
 
-function Section({ title, items, type }) {
+function Section({ title, items, type, navigate }) {
   const ITEMS_PER_PAGE = 4;
 
   const totalItems = items.length;
@@ -320,8 +364,8 @@ function Section({ title, items, type }) {
 
   const [page, setPage] = useState(0);
 
-  const prevPage = () => setPage(p => Math.max(p - 1, 0));
-  const nextPage = () => setPage(p => Math.min(p + 1, totalPages - 1));
+  const prevPage = () => setPage((p) => Math.max(p - 1, 0));
+  const nextPage = () => setPage((p) => Math.min(p + 1, totalPages - 1));
 
   // Tính item đang hiển thị
   const startIndex = page * ITEMS_PER_PAGE;
@@ -346,10 +390,9 @@ function Section({ title, items, type }) {
       <div className="max-w-5xl mx-auto">
         {/* Header với title và nút "Xem thêm" */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold underline cursor-pointer hover:text-blue-600 transition-colors">{title}</h2>
-          <button className="text-blue-600 font-medium underline hover:text-blue-800">
-            もっと見る
-          </button>
+          <h2 className="text-xl font-bold cursor-pointer hover:text-orange-600 hover:underline transition-colors">
+            {title}
+          </h2>
         </div>
 
         {/* Container chứa nút trái, carousel, nút phải */}
@@ -359,8 +402,11 @@ function Section({ title, items, type }) {
             onClick={prevPage}
             disabled={page === 0}
             className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
-            ${page === 0 ? "bg-gray-300 text-gray-400 cursor-not-allowed" :
-                           "bg-orange-400 text-white hover:bg-orange-500"}`}
+            ${
+              page === 0
+                ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                : "bg-orange-400 text-white hover:bg-orange-500"
+            }`}
           >
             &#8592;
           </button>
@@ -376,24 +422,29 @@ function Section({ title, items, type }) {
                     restaurant={item.restaurant_name}
                     imageUrl={item.primary_image_url}
                     price={item.price}
+                    onClick={() => navigate(`/review/${item.menu_id}`)}
                   />
                 );
               if (type === "food") {
                 return (
-                  <CarouselCard 
-                    key={item.dish_id || index} 
+                  <CarouselCard
+                    key={item.dish_id || index}
                     title={item.dish_name}
                     imageUrl={item.primary_image_url}
                     subtitle={item.cuisine_type}
+                    onClick={() => navigate(`/dish/${item.dish_id}`)}
                   />
                 );
               }
               if (type === "restaurant") {
                 return (
-                  <CarouselCard 
-                    key={item.restaurant_id || index} 
+                  <CarouselCard
+                    key={item.restaurant_id || index}
                     title={item.restaurant_name}
                     imageUrl={item.primary_image_url}
+                    onClick={() =>
+                      navigate(`/restaurant/${item.restaurant_id}`)
+                    }
                   />
                 );
               }
@@ -406,8 +457,11 @@ function Section({ title, items, type }) {
             onClick={nextPage}
             disabled={page === totalPages - 1}
             className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
-            ${page === totalPages - 1 ? "bg-gray-300 text-gray-400 cursor-not-allowed" :
-                                        "bg-orange-400 text-white hover:bg-orange-500"}`}
+            ${
+              page === totalPages - 1
+                ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                : "bg-orange-400 text-white hover:bg-orange-500"
+            }`}
           >
             &#8594;
           </button>
@@ -417,20 +471,27 @@ function Section({ title, items, type }) {
   );
 }
 
-
-function CarouselCard({ title, imageUrl, subtitle }) {
+function CarouselCard({ title, imageUrl, subtitle, onClick }) {
   return (
-    <div className="w-52 p-4 border rounded-lg text-center flex-shrink-0 cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all bg-white">
+    <div
+      onClick={onClick}
+      className="w-52 p-4 border rounded-lg text-center flex-shrink-0 cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all bg-white"
+    >
       <div className="w-full h-32 bg-gray-200 rounded-xl overflow-hidden">
         {imageUrl ? (
-          <img 
-            src={imageUrl} 
+          <img
+            src={imageUrl}
             alt={title}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
-              e.target.parentElement.innerHTML = '<span class="text-gray-400 text-sm">No Image</span>';
+              e.target.style.display = "none";
+              e.target.parentElement.classList.add(
+                "flex",
+                "items-center",
+                "justify-center"
+              );
+              e.target.parentElement.innerHTML =
+                '<span class="text-gray-400 text-sm">No Image</span>';
             }}
           />
         ) : (
@@ -445,19 +506,27 @@ function CarouselCard({ title, imageUrl, subtitle }) {
   );
 }
 
-function MenuCard({ dish, restaurant, imageUrl, price }) {
+function MenuCard({ dish, restaurant, imageUrl, price, onClick }) {
   return (
-    <div className="w-52 p-4 border rounded-lg text-center flex-shrink-0 cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all bg-white">
+    <div
+      onClick={onClick}
+      className="w-52 p-4 border rounded-lg text-center flex-shrink-0 cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all bg-white"
+    >
       <div className="w-full h-32 bg-gray-200 rounded-xl overflow-hidden">
         {imageUrl ? (
-          <img 
-            src={imageUrl} 
+          <img
+            src={imageUrl}
             alt={dish}
             className="w-full h-full object-cover"
             onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
-              e.target.parentElement.innerHTML = '<span class="text-gray-400 text-sm">No Image</span>';
+              e.target.style.display = "none";
+              e.target.parentElement.classList.add(
+                "flex",
+                "items-center",
+                "justify-center"
+              );
+              e.target.parentElement.innerHTML =
+                '<span class="text-gray-400 text-sm">No Image</span>';
             }}
           />
         ) : (
@@ -468,15 +537,11 @@ function MenuCard({ dish, restaurant, imageUrl, price }) {
       </div>
       <p className="mt-2 text-sm font-medium truncate">{dish}</p>
       <p className="text-xs text-gray-600 truncate">{restaurant}</p>
-      {price && <p className="text-xs text-orange-600 font-semibold mt-1">{price.toLocaleString()} VND</p>}
-    </div>
-  );
-}
-
-function SeeMoreCard() {
-  return (
-    <div className="w-52 h-48 flex-shrink-0 flex items-center justify-center border rounded-lg bg-blue-50 cursor-pointer hover:bg-blue-100">
-      <p className="text-blue-700 font-medium">もっと見る</p>
+      {price && (
+        <p className="text-xs text-orange-600 font-semibold mt-1">
+          {price.toLocaleString()} VND
+        </p>
+      )}
     </div>
   );
 }
@@ -485,19 +550,129 @@ function SearchResultCard({ item, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="min-w-52 p-4 border rounded-lg text-center cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all flex-shrink-0"
+      className="w-52 p-4 border rounded-lg text-center cursor-pointer hover:bg-gray-100 hover:shadow-lg transition-all flex-shrink-0"
     >
       <div className="w-full h-32 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
         {item.image ? (
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <span className="text-gray-400">No image</span>
         )}
       </div>
       <p className="mt-2 text-sm font-medium">{item.name}</p>
       {item.address && <p className="text-xs text-gray-600">{item.address}</p>}
-      {item.price && <p className="text-xs text-blue-600">¥{item.price}</p>}
-      {item.description && <p className="text-xs text-gray-500 mt-1">{item.description?.substring(0, 50)}...</p>}
+      {item.price && (
+        <p className="text-xs text-orange-600">{item.price} VND</p>
+      )}
+      {item.description && (
+        <p className="text-xs text-gray-500 mt-1">
+          {item.description?.substring(0, 50)}...
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SearchResultsSection({ searchResults, navigate }) {
+  const ITEMS_PER_PAGE = 4;
+  const [dishPage, setDishPage] = useState(0);
+  const [restaurantPage, setRestaurantPage] = useState(0);
+
+  const dishes = searchResults.dishes || [];
+  const restaurants = searchResults.restaurants || [];
+
+  const dishTotalPages = Math.ceil(dishes.length / ITEMS_PER_PAGE);
+  const restaurantTotalPages = Math.ceil(restaurants.length / ITEMS_PER_PAGE);
+
+  const getVisibleItems = (items, page) => {
+    const startIndex = page * ITEMS_PER_PAGE;
+    return items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  };
+
+  const renderPaginatedSection = (title, items, page, setPage) => {
+    if (items.length === 0) return null;
+
+    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    const visibleItems = getVisibleItems(items, page);
+    const showNavigation = items.length > ITEMS_PER_PAGE;
+
+    return (
+      <section className="mt-10">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-xl font-bold mb-4">{title}</h2>
+
+          <div className="flex items-center gap-4">
+            {/* Nút trái - chỉ hiển thị nếu có nhiều hơn 4 items */}
+            {showNavigation && (
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                disabled={page === 0}
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
+                ${
+                  page === 0
+                    ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-400 text-white hover:bg-orange-500"
+                }`}
+              >
+                &#8592;
+              </button>
+            )}
+
+            {/* Hiển thị 4 item / lần */}
+            <div className="flex gap-6 overflow-hidden flex-1">
+              {visibleItems.map((item) => (
+                <SearchResultCard
+                  key={item.id}
+                  item={item}
+                  onClick={() =>
+                    navigate(
+                      item.restaurant_id
+                        ? `/restaurant/${item.restaurant_id}`
+                        : `/dish/${item.id}`
+                    )
+                  }
+                />
+              ))}
+            </div>
+
+            {/* Nút phải - chỉ hiển thị nếu có nhiều hơn 4 items */}
+            {showNavigation && (
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                disabled={page === totalPages - 1}
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 z-20
+                ${
+                  page === totalPages - 1
+                    ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                    : "bg-orange-400 text-white hover:bg-orange-500"
+                }`}
+              >
+                &#8594;
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto mt-6">
+      {renderPaginatedSection("料理", dishes, dishPage, setDishPage)}
+      {renderPaginatedSection(
+        "レストラン",
+        restaurants,
+        restaurantPage,
+        setRestaurantPage
+      )}
+
+      {dishes.length === 0 && restaurants.length === 0 && (
+        <p className="text-center text-gray-500 mt-8">検索結果が存在しません</p>
+      )}
     </div>
   );
 }
@@ -520,7 +695,11 @@ function DetailModal({ item, onClose }) {
           {/* Image */}
           <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden mb-6">
             {item.image ? (
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className="text-gray-400">No image</span>
             )}
@@ -529,7 +708,7 @@ function DetailModal({ item, onClose }) {
           {/* Info */}
           <div className="space-y-3">
             <p className="text-gray-700">{item.description}</p>
-            
+
             {item.address && (
               <div>
                 <p className="font-semibold text-sm">住所</p>
