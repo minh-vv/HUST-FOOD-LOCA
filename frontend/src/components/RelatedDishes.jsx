@@ -137,7 +137,7 @@ export default function RelatedDishes({ restaurantId, currentMenuId }) {
 
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-blue-600">
-                    ¥{dish.price?.toLocaleString() || "N/A"}
+                    {dish.price?.toLocaleString() + " VND" || "N/A"}
                   </span>
 
                   <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">

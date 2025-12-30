@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { Heart } from "lucide-react";
+import { Heart, Bookmark } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -14,12 +14,68 @@ export default function RestaurantDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaveLoading, setIsSaveLoading] = useState(false);
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
     fetchRestaurantDetail();
     checkFavoriteStatus();
+    checkSavedStatus();
   }, [restaurantId]);
+
+  // Check if saved
+  const checkSavedStatus = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      const res = await fetch(
+        `${API_BASE_URL}/saved/restaurant/${restaurantId}/check`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsSaved(data.data?.is_saved || false);
+      }
+    } catch (err) {
+      console.error("Error checking saved status:", err);
+    }
+  };
+
+  // Handle save toggle
+  const handleSaveClick = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("保存するにはログインしてください");
+      return;
+    }
+
+    setIsSaveLoading(true);
+    try {
+      const method = isSaved ? "DELETE" : "POST";
+      const res = await fetch(`${API_BASE_URL}/saved/restaurant/${restaurantId}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        setIsSaved(!isSaved);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) setIsSaved(true);
+        else if (res.status === 404) setIsSaved(false);
+        else console.error("Save error:", data.message);
+      }
+    } catch (err) {
+      console.error("Error toggling saved:", err);
+    } finally {
+      setIsSaveLoading(false);
+    }
+  };
 
   const fetchRestaurantDetail = async () => {
     try {
@@ -194,7 +250,7 @@ export default function RestaurantDetailPage() {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400">
-                    No image
+                    画像なし
                   </div>
                 )}
 
@@ -252,6 +308,23 @@ export default function RestaurantDetailPage() {
                       size={28}
                       fill={isFavorited ? "currentColor" : "none"}
                       className={isFavoriteLoading ? "animate-pulse" : ""}
+                    />
+                  </button>
+
+                  <button
+                    onClick={handleSaveClick}
+                    disabled={isSaveLoading}
+                    className={`p-2 rounded-full transition-colors ${
+                      isSaved
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                    } ${isSaveLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={isSaved ? "保存を解除" : "保存する"}
+                  >
+                    <Bookmark
+                      size={24}
+                      fill={isSaved ? "currentColor" : "none"}
+                      className={isSaveLoading ? "animate-pulse" : ""}
                     />
                   </button>
                 </div>
@@ -345,7 +418,7 @@ export default function RestaurantDetailPage() {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full text-gray-400">
-                        No image
+                        画像なし
                       </div>
                     )}
                   </div>
@@ -354,8 +427,8 @@ export default function RestaurantDetailPage() {
                       {item.name}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold text-blue-600">
-                        ¥{parseFloat(item.price).toFixed(0)}
+                      <span className="text-lg font-semibold text-orange-600">
+                        {parseFloat(item.price).toFixed(0)} VND
                       </span>
                       <div className="flex items-center gap-1">
                         <span className="text-yellow-500">⭐</span>

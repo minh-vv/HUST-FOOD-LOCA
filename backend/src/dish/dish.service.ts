@@ -44,6 +44,7 @@ export class DishService {
       })),
 
       ingredients: dish.ingredients.map((i) => ({
+        ingredient_id: i.ingredient.ingredient_id,
         name: i.ingredient.ingredient_name,
         is_main: i.is_main,
       })),

@@ -90,4 +90,37 @@ export class SavedController {
             data: { is_saved: isSaved },
         };
     }
+
+    /**
+     * Restaurant saved endpoints
+     */
+    @Post('restaurant/:restaurantId')
+    @HttpCode(HttpStatus.CREATED)
+    async addRestaurantSaved(
+        @CurrentUser() user: { user_id: number },
+        @Param('restaurantId', ParseIntPipe) restaurantId: number,
+    ) {
+        return this.savedService.addRestaurantSaved(user.user_id, restaurantId);
+    }
+
+    @Delete('restaurant/:restaurantId')
+    @HttpCode(HttpStatus.OK)
+    async removeRestaurantSaved(
+        @CurrentUser() user: { user_id: number },
+        @Param('restaurantId', ParseIntPipe) restaurantId: number,
+    ) {
+        return this.savedService.removeRestaurantSaved(user.user_id, restaurantId);
+    }
+
+    @Get('restaurant/:restaurantId/check')
+    async checkRestaurantSaved(
+        @CurrentUser() user: { user_id: number },
+        @Param('restaurantId', ParseIntPipe) restaurantId: number,
+    ): Promise<{ success: boolean; data: { is_saved: boolean } }> {
+        const isSaved = await this.savedService.isRestaurantSaved(user.user_id, restaurantId);
+        return {
+            success: true,
+            data: { is_saved: isSaved },
+        };
+    }
 }

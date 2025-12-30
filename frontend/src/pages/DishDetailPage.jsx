@@ -13,12 +13,32 @@ export default function DishDetailPage() {
   const [error, setError] = useState(null);
 
   const [thumbIndex, setThumbIndex] = useState(0);
+  const [userAllergies, setUserAllergies] = useState([]);
 
   /* ================= FETCH DATA ================= */
   useEffect(() => {
     if (!dishId) return;
     fetchDishDetail();
   }, [dishId]);
+
+  useEffect(() => {
+    const fetchAllergies = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      try {
+        const res = await fetch("http://localhost:3000/user/allergy", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserAllergies(data.map((a) => a.ingredient_id));
+        }
+      } catch (err) {
+        /* ignore */
+      }
+    };
+    fetchAllergies();
+  }, []);
 
   const fetchDishDetail = async () => {
     try {
@@ -87,7 +107,7 @@ export default function DishDetailPage() {
   /* ================= DATA FORMAT ================= */
   const priceText =
     dishDetail.average_price != null
-      ? `¥${Number(dishDetail.average_price).toLocaleString()}`
+      ? `VND ${Number(dishDetail.average_price).toLocaleString()}`
       : "ー";
 
   /* ================= MAIN UI ================= */
@@ -179,26 +199,7 @@ export default function DishDetailPage() {
                 </span>
               </div>
 
-              {/* Ingredients */}
-              <div>
-                <p className="text-sm text-gray-600 font-semibold mb-2">
-                  一般材料
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {dishDetail.ingredients?.length ? (
-                    dishDetail.ingredients.map((ing, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
-                      >
-                        {ing.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-500 text-sm">ー</span>
-                  )}
-                </div>
-              </div>
+          
 
               {/* Flavors */}
               <div>
@@ -228,6 +229,39 @@ export default function DishDetailPage() {
                   {priceText}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+        {/* Ingredients card spanning full width */}
+        <div className="lg:col-span-2 mt-6">
+          <div className="bg-white rounded-2xl shadow-md border p-6">
+            <p className="text-sm text-gray-600 font-semibold mb-2">一般材料</p>
+            <div className="flex flex-wrap gap-2">
+              {dishDetail.ingredients?.length ? (
+                dishDetail.ingredients.map((ing, idx) => {
+                  const isAllergy = userAllergies.includes(ing.ingredient_id);
+                  return (
+                    <span
+                      key={idx}
+                      className={`px-3 py-1 rounded-full text-sm cursor-default transition relative ${
+                        isAllergy
+                          ? "bg-yellow-200 text-red-700 border border-yellow-400 tooltip-allergy"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                      title={isAllergy ? "あなたはこの食材にアレルギーがあります" : undefined}
+                    >
+                      {ing.name}
+                      {isAllergy && (
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 bg-yellow-200 text-red-700 text-xs rounded shadow z-10 opacity-0 group-hover:opacity-100 pointer-events-none">
+                          あなたはこの食材にアレルギーがあります
+                        </span>
+                      )}
+                    </span>
+                  );
+                })
+              ) : (
+                <span className="text-gray-500 text-sm">ー</span>
+              )}
             </div>
           </div>
         </div>

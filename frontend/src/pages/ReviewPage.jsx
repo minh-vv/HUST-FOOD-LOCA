@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { Heart, Star, X, Image as ImageIcon, Edit2, Trash2 } from "lucide-react";
+import { Heart, Bookmark, Star, X, Image as ImageIcon, Edit2, Trash2 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:3000/api";
 const COMMENTS_BASE_URL = "http://localhost:3000/api/comments";
@@ -30,6 +30,9 @@ export default function DishDetailPage() {
   const [error, setError] = useState(null);
 
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaveLoading, setIsSaveLoading] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -61,7 +64,103 @@ export default function DishDetailPage() {
   useEffect(() => {
     fetchDishDetail();
     fetchComments();
+    checkFavoriteStatus();
+    checkSavedStatus();
   }, [menuId]);
+
+  const checkSavedStatus = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/saved/menu/${menuId}/check`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsSaved(data.data?.is_saved || false);
+      }
+    } catch (err) {
+      console.error("Error checking saved status:", err);
+    }
+  };
+
+  const handleSaveClick = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("保存するにはログインしてください");
+      return;
+    }
+    setIsSaveLoading(true);
+    try {
+      const method = isSaved ? "DELETE" : "POST";
+      const res = await fetch(`${API_BASE_URL}/saved/menu/${menuId}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setIsSaved(!isSaved);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) setIsSaved(true);
+        else if (res.status === 404) setIsSaved(false);
+        else console.error("Save error:", data.message);
+      }
+    } catch (err) {
+      console.error("Error toggling save:", err);
+    } finally {
+      setIsSaveLoading(false);
+    }
+  };
+
+  // Check if this menu is already favorited
+  const checkFavoriteStatus = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/favorites/menu/${menuId}/check`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsFavorited(data.data?.is_favorited || false);
+      }
+    } catch (err) {
+      console.error("Error checking favorite status:", err);
+    }
+  };
+
+  // Toggle favorite for menu
+  const handleFavoriteClick = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("お気に入りを追加するにはログインしてください");
+      return;
+    }
+    setIsFavoriteLoading(true);
+    try {
+      const method = isFavorited ? "DELETE" : "POST";
+      const res = await fetch(`${API_BASE_URL}/favorites/menu/${menuId}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setIsFavorited(!isFavorited);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          setIsFavorited(true);
+        } else if (res.status === 404) {
+          setIsFavorited(false);
+        } else {
+          console.error("Favorite error:", data.message);
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
 
   const fetchDishDetail = async () => {
     try {
@@ -105,19 +204,36 @@ export default function DishDetailPage() {
     }
   })();
 
+  const [userAllergies, setUserAllergies] = useState([]); // ingredient_id[]
+
+  useEffect(() => {
+    const fetchAllergies = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      const res = await fetch("http://localhost:3000/user/allergy", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserAllergies(data.map(a => a.ingredient_id));
+      }
+    };
+    fetchAllergies();
+  }, []);
+
   const allIngredients = useMemo(() => {
-    const main = dishDetail?.ingredients?.main || [];
+    const main = dishDetail?.ingredients?.main || dishDetail?.ingredients || [];
     const others = dishDetail?.ingredients?.others || [];
     return [...main, ...others];
   }, [dishDetail]);
 
   const allergenIngredients = useMemo(() => {
-    return allIngredients.filter((ing) =>
-      ALLERGEN_KEYWORDS.some((k) =>
-        ing.name?.toLowerCase().includes(k.toLowerCase())
-      )
-    );
-  }, [allIngredients]);
+    if (!allIngredients || !userAllergies || userAllergies.length === 0) return [];
+    return allIngredients.filter((ing) => {
+      const id = ing.ingredient_id ?? ing.id ?? ing.ingredientId;
+      return id != null ? userAllergies.includes(id) : false;
+    });
+  }, [allIngredients, userAllergies]);
 
   const filteredComments = useMemo(() => {
     if (!comments) return [];
@@ -320,32 +436,53 @@ export default function DishDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-md border p-6 space-y-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {dishDetail.menu_name || dishDetail.name || "料理名"}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  {dishDetail.restaurant?.name || "レストラン名"} ·{" "}
-                  {dishDetail.restaurant?.address || "所在地不明"}
-                </p>
-                <button
-                  onClick={() => setIsFavorited((v) => !v)}
-                  className={`mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm transition ${
-                    isFavorited
-                      ? "bg-red-100 border-red-300 text-red-600"
-                      : "bg-white border-gray-300 text-gray-600 hover:border-gray-500"
-                  }`}
-                >
-                  <Heart
-                    size={16}
-                    className={isFavorited ? "fill-red-500 text-red-500" : ""}
-                  />
-                  {isFavorited ? "お気に入り済み" : "お気に入りに追加"}
-                </button>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {dishDetail.menu_name || dishDetail.name || "料理名"}
+                  </h1>
+                  <p className="text-gray-600 mt-1">
+                    {dishDetail.restaurant?.name || "レストラン名"} ·{" "}
+                    {dishDetail.restaurant?.address || "所在地不明"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavoriteClick();
+                    }}
+                    disabled={isFavoriteLoading}
+                    className={`p-2 rounded-full transition-colors ${
+                      isFavorited
+                        ? "bg-red-100 text-red-600"
+                        : "bg-white text-gray-400 hover:bg-gray-100"
+                    } ${isFavoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={isFavorited ? "お気に入りから削除" : "お気に入りに追加"}
+                  >
+                    <Heart size={20} fill={isFavorited ? "currentColor" : "none"} />
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSaveClick();
+                    }}
+                    disabled={isSaveLoading}
+                    className={`p-2 rounded-full transition-colors ${
+                      isSaved
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-white text-gray-400 hover:bg-gray-100"
+                    } ${isSaveLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    title={isSaved ? "保存を解除" : "保存する"}
+                  >
+                    <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
+                  </button>
+                </div>
               </div>
 
               <div
-                className="relative w-full h-[340px] bg-gray-100 rounded-xl overflow-hidden cursor-zoom-in"
+                className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden cursor-zoom-in"
                 onClick={() => setLightboxOpen(true)}
               >
                 {dishDetail.images?.length ? (
@@ -418,42 +555,6 @@ export default function DishDetailPage() {
                 <span className="text-lg font-bold text-blue-700">
                   {priceText}
                 </span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md border p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  使用原材料リスト
-                </h2>
-                {allergenIngredients.length > 0 && (
-                  <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold">
-                    アレルギー注意
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <IngredientGroup
-                  title="主要材料"
-                  items={dishDetail.ingredients?.main}
-                />
-                <IngredientGroup
-                  title="副材料"
-                  items={dishDetail.ingredients?.others}
-                />
-                {allergenIngredients.length > 0 && (
-                  <IngredientGroup
-                    title="アレルギーの可能性"
-                    items={allergenIngredients}
-                    highlight
-                  />
-                )}
-                {allIngredients.length === 0 && (
-                  <p className="text-gray-500 text-sm">
-                    原材料情報がまだあります。
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -615,6 +716,44 @@ export default function DishDetailPage() {
               </div>
             </div>
           </div>
+          {/* Ingredients card spans full width under the two columns */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-md border p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">
+                  使用原材料リスト
+                </h2>
+                {allergenIngredients.length > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold">
+                    アレルギー注意
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <IngredientGroup
+                  title="主要材料"
+                  items={dishDetail.ingredients?.main}
+                />
+                <IngredientGroup
+                  title="副材料"
+                  items={dishDetail.ingredients?.others}
+                />
+                {allergenIngredients.length > 0 && (
+                  <IngredientGroup
+                    title="アレルギーの可能性"
+                    items={allergenIngredients}
+                    highlight
+                  />
+                )}
+                {allIngredients.length === 0 && (
+                  <p className="text-gray-500 text-sm">
+                    原材料情報がまだあります。
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -740,6 +879,21 @@ function StarSelector({ value, onChange }) {
 }
 
 function IngredientGroup({ title, items = [], highlight = false }) {
+  const [userAllergies, setUserAllergies] = useState([]);
+  useEffect(() => {
+    const fetchAllergies = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+      const res = await fetch("http://localhost:3000/user/allergy", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserAllergies(data.map(a => a.ingredient_id));
+      }
+    };
+    fetchAllergies();
+  }, []);
   if (!items.length) return null;
   return (
     <div
@@ -755,11 +909,22 @@ function IngredientGroup({ title, items = [], highlight = false }) {
         {title}
       </p>
       <ul className="mt-2 space-y-1">
-        {items.map((ing) => (
-          <li key={ing.id || ing.ingredient_id || ing.name} className="text-gray-700 text-sm">
-            • {ing.name}
-          </li>
-        ))}
+        {items.map((ing) => {
+          const isAllergy = userAllergies.includes(ing.ingredient_id);
+          return (
+            <li
+              key={ing.id || ing.ingredient_id || ing.name}
+              className={`text-sm px-2 py-1 rounded ${isAllergy ? "bg-yellow-200 text-red-700 border border-yellow-400 tooltip-allergy" : "text-gray-700"}`}
+              title={isAllergy ? "あなたはこの食材にアレルギーがあります" : undefined}
+              style={{ display: 'inline-block', marginRight: 8, marginBottom: 4 }}
+            >
+              • {ing.name}
+              {isAllergy && (
+                <span className="ml-1 text-xs text-red-600">⚠</span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

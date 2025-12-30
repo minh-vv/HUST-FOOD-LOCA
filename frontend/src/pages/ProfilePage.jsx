@@ -248,7 +248,7 @@ export default function ProfilePage() {
                       <MenuCard
                         key={item.favorite_id}
                         item={item}
-                        onClick={() => navigate(`/dish/${item.menu_id}`)}
+                        onClick={() => navigate(`/review/${item.menu_id}`)}
                         onRemove={() =>
                           handleRemoveFavorite("menu", item.menu_id)
                         }
@@ -475,7 +475,7 @@ function MenuCard({ item, onClick, onRemove, isSaved = false }) {
         <p className="text-sm text-gray-500 truncate">{item.restaurant_name}</p>
         {item.price && (
           <p className="text-orange-500 font-medium mt-1">
-            ¥{item.price.toLocaleString()}
+            {item.price.toLocaleString()} VND
           </p>
         )}
       </div>
@@ -552,9 +552,73 @@ function EditProfileModal({ user, activeTab, setActiveTab, onClose, onSave }) {
     full_name: user?.full_name || "",
     phone: user?.phone || "",
     email: user?.email || "",
-    allergies: user?.allergies || [],
   });
+  const [allergies, setAllergies] = useState([]); // [{ingredient_id, ingredient_name}]
+  const [ingredientOptions, setIngredientOptions] = useState([]); // [{ingredient_id, ingredient_name}]
   const [allergyInput, setAllergyInput] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+    // Fetch user allergies on open
+    useEffect(() => {
+      const fetchAllergies = async () => {
+        const token = localStorage.getItem("access_token");
+        const res = await fetch("http://localhost:3000/user/allergy", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAllergies(data);
+        }
+      };
+      fetchAllergies();
+    }, []);
+
+    // Search ingredient options
+    const handleSearchIngredient = async (q) => {
+      setSearchLoading(true);
+      setAllergyInput(q);
+      try {
+        const res = await fetch(`http://localhost:3000/ingredient/search?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIngredientOptions(data);
+        }
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    // Add allergy
+    const handleAddAllergy = async (ingredient) => {
+      if (!ingredient || allergies.some(a => a.ingredient_id === ingredient.ingredient_id)) return;
+      setAllergies([...allergies, ingredient]);
+      setAllergyInput("");
+      setIngredientOptions([]);
+      // Call backend
+      const token = localStorage.getItem("access_token");
+      await fetch("http://localhost:3000/user/allergy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ingredient_id: ingredient.ingredient_id }),
+      });
+    };
+
+    // Remove allergy
+    const handleRemoveAllergy = async (ingredient) => {
+      setAllergies(allergies.filter(a => a.ingredient_id !== ingredient.ingredient_id));
+      // Call backend
+      const token = localStorage.getItem("access_token");
+      await fetch("http://localhost:3000/user/allergy", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ingredient_id: ingredient.ingredient_id }),
+      });
+    };
   const [passwordData, setPasswordData] = useState({
     current_password: "",
     new_password: "",
@@ -618,25 +682,6 @@ function EditProfileModal({ user, activeTab, setActiveTab, onClose, onSave }) {
     }
   };
 
-  const handleAddAllergy = (e) => {
-    if (e.key === "Enter" && allergyInput.trim()) {
-      e.preventDefault();
-      if (!formData.allergies.includes(allergyInput.trim())) {
-        setFormData({
-          ...formData,
-          allergies: [...formData.allergies, allergyInput.trim()],
-        });
-      }
-      setAllergyInput("");
-    }
-  };
-
-  const handleRemoveAllergy = (allergyToRemove) => {
-    setFormData({
-      ...formData,
-      allergies: formData.allergies.filter((a) => a !== allergyToRemove),
-    });
-  };
 
   const handleSaveBasicInfo = () => {
     onSave(formData);
@@ -790,7 +835,7 @@ function EditProfileModal({ user, activeTab, setActiveTab, onClose, onSave }) {
                 />
               </div>
 
-              {/* Allergies Field */}
+              {/* Allergies Field - Autocomplete */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   食物アレルギー
@@ -798,19 +843,33 @@ function EditProfileModal({ user, activeTab, setActiveTab, onClose, onSave }) {
                 <input
                   type="text"
                   value={allergyInput}
-                  onChange={(e) => setAllergyInput(e.target.value)}
-                  onKeyDown={handleAddAllergy}
+                  onChange={(e) => handleSearchIngredient(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all outline-none"
-                  placeholder="Enterで追加"
+                  placeholder="原材料名で検索..."
                 />
-                {formData.allergies.length > 0 && (
+                {searchLoading && <div className="text-xs text-gray-400 mt-1">検索中...</div>}
+                {ingredientOptions.length > 0 && (
+                  <div className="border rounded-lg bg-white shadow mt-1 max-h-40 overflow-y-auto z-10 relative">
+                    {ingredientOptions.map((ing) => (
+                      <button
+                        key={ing.ingredient_id}
+                        type="button"
+                        className="block w-full text-left px-4 py-2 hover:bg-orange-100 text-sm"
+                        onClick={() => handleAddAllergy(ing)}
+                      >
+                        {ing.ingredient_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {allergies.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {formData.allergies.map((allergy, index) => (
+                    {allergies.map((allergy) => (
                       <span
-                        key={index}
+                        key={allergy.ingredient_id}
                         className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
                       >
-                        {allergy}
+                        {allergy.ingredient_name}
                         <button
                           onClick={() => handleRemoveAllergy(allergy)}
                           className="hover:text-red-900"

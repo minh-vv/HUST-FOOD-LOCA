@@ -118,7 +118,7 @@ export default function FilterDropdown({
 
     onClose();
   }}
-  className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+  className="px-4 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 text-sm"
 >
   適用
 </button>

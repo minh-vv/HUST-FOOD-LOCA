@@ -16,6 +16,7 @@ export class DishDetailResponseDto {
   }[];
 
   ingredients: {
+    ingredient_id: number;
     name: string;
     is_main: boolean;
   }[];
