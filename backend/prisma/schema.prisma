@@ -24,9 +24,10 @@ model User {
   favorites           UserFavorite[]
   restaurantFavorites RestaurantFavorite[]
   saved               UserSaved[]
+  restaurantSaved     RestaurantSaved[]
 
   @@map("users")
-}
+} 
 
 model PasswordResetToken {
   id         Int       @id @default(autoincrement())
@@ -69,6 +70,7 @@ model Restaurant {
   images               RestaurantImage[]
   menu                 RestaurantMenu[]
   favorites            RestaurantFavorite[]
+  saved                RestaurantSaved[]
 
   @@map("restaurants")
 }
@@ -273,6 +275,21 @@ model UserSaved {
   @@index([menu_id])
   @@index([user_id])
   @@map("user_saved")
+}
+
+// Save restaurants (similar to favorites for restaurants)
+model RestaurantSaved {
+  saved_id      Int        @id @default(autoincrement())
+  user_id       Int
+  restaurant_id Int
+  created_at    DateTime   @default(now())
+  restaurant    Restaurant @relation(fields: [restaurant_id], references: [restaurant_id], onDelete: Cascade)
+  user          User       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, restaurant_id], name: "unique_user_restaurant_saved")
+  @@index([restaurant_id])
+  @@index([user_id])
+  @@map("restaurant_saved")
 }
 
 model MenuImages {

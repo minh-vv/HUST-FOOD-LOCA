@@ -50,14 +50,39 @@ export class SavedService {
             created_at: item.created_at,
         }));
 
+        // Fetch saved restaurants
+        const restaurantSaved = await this.prisma.restaurantSaved.findMany({
+            where: { user_id: userId },
+            include: {
+                restaurant: {
+                    include: {
+                        images: {
+                            where: { is_primary: true },
+                            take: 1,
+                        },
+                    },
+                },
+            },
+            orderBy: { created_at: 'desc' },
+        });
+
+        const restaurants: RestaurantSavedItemDto[] = restaurantSaved.map((item) => ({
+            saved_id: item.saved_id,
+            restaurant_id: item.restaurant_id,
+            restaurant_name: item.restaurant.restaurant_name,
+            address: item.restaurant.address || null,
+            image_url: item.restaurant.images[0]?.image_url || null,
+            created_at: item.created_at,
+        }));
+
         return {
             success: true,
             message: '保存済みリストを取得しました',
             data: {
                 menus,
-                restaurants: [], // UserSaved doesn't support restaurants yet
+                restaurants,
                 total_menus: menus.length,
-                total_restaurants: 0,
+                total_restaurants: restaurants.length,
             },
         };
     }
@@ -167,6 +192,60 @@ export class SavedService {
                 unique_user_saved: {
                     user_id: userId,
                     menu_id: menuId,
+                },
+            },
+        });
+        return !!saved;
+    }
+
+    /**
+     * Add a restaurant to user's saved list
+     */
+    async addRestaurantSaved(userId: number, restaurantId: number): Promise<SavedActionResponseDto> {
+        const restaurant = await this.prisma.restaurant.findUnique({ where: { restaurant_id: restaurantId } });
+        if (!restaurant) throw new NotFoundException('レストランが見つかりません');
+
+        const existing = await this.prisma.restaurantSaved.findUnique({
+            where: {
+                unique_user_restaurant_saved: {
+                    user_id: userId,
+                    restaurant_id: restaurantId,
+                },
+            },
+        });
+        if (existing) throw new ConflictException('このレストランは既に保存済みです');
+
+        const saved = await this.prisma.restaurantSaved.create({ data: { user_id: userId, restaurant_id: restaurantId } });
+        return { success: true, message: 'レストランを保存しました', data: { saved_id: saved.saved_id, type: 'restaurant', item_id: restaurantId, action: 'added' } };
+    }
+
+    /**
+     * Remove a restaurant from user's saved list
+     */
+    async removeRestaurantSaved(userId: number, restaurantId: number): Promise<SavedActionResponseDto> {
+        const existing = await this.prisma.restaurantSaved.findUnique({
+            where: {
+                unique_user_restaurant_saved: {
+                    user_id: userId,
+                    restaurant_id: restaurantId,
+                },
+            },
+        });
+        if (!existing) throw new NotFoundException('このレストランは保存されていません');
+
+        await this.prisma.restaurantSaved.delete({ where: { saved_id: existing.saved_id } });
+        return { success: true, message: 'レストランの保存を解除しました', data: { type: 'restaurant', item_id: restaurantId, action: 'removed' } };
+    }
+
+    /**
+     * Check if a restaurant is in user's saved list
+     */
+    async isRestaurantSaved(userId: number, restaurantId: number): Promise<boolean> {
+        const saved = await this.prisma.restaurantSaved.findUnique({
+            where: {
+                unique_user_restaurant_saved: {
+                    user_id: userId,
+                    restaurant_id: restaurantId,
                 },
             },
         });
