@@ -582,11 +582,37 @@ function EditProfileModal({ user, activeTab, setActiveTab, onClose, onSave }) {
     };
     reader.readAsDataURL(file);
 
-    // TODO: Upload to server
     setUploading(true);
     try {
-      // Upload logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const token = localStorage.getItem("access_token");
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("http://localhost:3000/user/avatar", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (res.ok) {
+        // Lấy lại profile mới để cập nhật avatar
+        const profileRes = await fetch("http://localhost:3000/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (profileRes.ok) {
+          const newProfile = await profileRes.json();
+          setPreviewImage(newProfile.profile_image_url);
+          // Nếu muốn cập nhật luôn avatar ngoài modal:
+          if (typeof window !== 'undefined' && window.location.reload) {
+            // Cập nhật avatar ngoài trang chính nếu cần
+            // window.location.reload();
+          }
+        }
+      } else {
+        alert("アップロードに失敗しました");
+      }
+    } catch (err) {
+      alert("アップロードに失敗しました");
     } finally {
       setUploading(false);
     }

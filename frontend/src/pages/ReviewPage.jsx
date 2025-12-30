@@ -306,7 +306,7 @@ export default function DishDetailPage() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-        <div className="text-sm text-gray-500 flex items-center gap-2">
+        {/* <div className="text-sm text-gray-500 flex items-center gap-2">
           <button
             className="hover:text-orange-600"
             onClick={() => navigate(`/dish/${menuId}`)}
@@ -315,7 +315,7 @@ export default function DishDetailPage() {
           </button>
           <span>/</span>
           <span className="text-gray-700 font-medium">原材料・評価</span>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
