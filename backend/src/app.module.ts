@@ -13,6 +13,7 @@ import { CmtModule } from './comment/cmt.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { SavedModule } from './saved/saved.module';
 import { DishModule } from './dish/dish.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DishModule } from './dish/dish.module';
     FavoritesModule,
     SavedModule,
     DishModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
