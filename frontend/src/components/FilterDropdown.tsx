@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 
 
 type FilterDropdownProps = {
@@ -16,7 +17,6 @@ export default function FilterDropdown({
 
   const [flavors, setFlavors] = useState<string[]>([]);
   const [ingredients, setIngredients] = useState<string[]>([]);
-  const [cookTime, setCookTime] = useState<string[]>([]);
 
   const toggle = (
     value: string,
@@ -81,25 +81,12 @@ export default function FilterDropdown({
         ))}
       </Section>
 
-      {/* Cook time */}
-      <Section title="調理時間">
-        {["〜10分", "10〜20分", "20分以上"].map(v => (
-          <Checkbox
-            key={v}
-            label={v}
-            checked={cookTime.includes(v)}
-            onChange={() => toggle(v, cookTime, setCookTime)}
-          />
-        ))}
-      </Section>
-
       {/* Actions */}
       <div className="flex justify-end gap-2 mt-4">
         <button
           onClick={() => {
             setFlavors([]);
             setIngredients([]);
-            setCookTime([]);
           }}
           className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
         >
