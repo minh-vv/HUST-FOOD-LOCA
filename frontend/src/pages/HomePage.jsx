@@ -132,7 +132,7 @@ export default function HomePage() {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
             <p className="text-gray-600"></p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export default function HomePage() {
           <div className="relative" ref={filterRef}>
             <button
               onClick={() => setShowFilter(prev => !prev)}
-              className="border px-4 py-2 rounded bg-orange-400 text-white hover:bg-blue-600"
+              className="border px-4 py-2 rounded bg-orange-400 text-white hover:bg-orange-600"
             >
               フィルター
             </button>
@@ -262,7 +262,7 @@ export default function HomePage() {
           </div>  
         </div>
         {showFilterAlert && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded shadow-md z-50">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded shadow-md z-50">
           フィルター結果
         </div>
       )}
@@ -291,6 +291,7 @@ export default function HomePage() {
           restaurant={menu.restaurant?.restaurant_name}
           imageUrl={menu.menu_images?.[0]?.image_url}
           price={menu.price}
+          onClick={() => navigate(`/review/${menu.menu_id}`)}
         />
       )}
     />
@@ -298,18 +299,24 @@ export default function HomePage() {
     <FilterCarousel
       title="レストラン"
       items={filteredRestaurants}
-      renderItem={(r) => (
-        <SearchResultCard
-          key={r.restaurant_id}
-          item={{
-            name: r.restaurant_name,
-            image: r.primary_image_url,
-            address: r.address,
-            description: r.description,
-          }}
-          onClick={() => setSelectedItem(r)}
-        />
-      )}
+      renderItem={(r) => {
+        // Lấy primary image từ images array
+        const primaryImage = r.images?.find(img => img.is_primary) || r.images?.[0];
+        const imageUrl = primaryImage?.image_url || null;
+        
+        return (
+          <SearchResultCard
+            key={r.restaurant_id}
+            item={{
+              name: r.restaurant_name,
+              image: imageUrl,
+              address: r.address,
+              description: r.description,
+            }}
+            onClick={() => navigate(`/restaurant/${r.restaurant_id}`)}
+          />
+        );
+      }}
     />
   </div>
 )}
@@ -630,8 +637,8 @@ function SearchResultsSection({ searchResults, navigate }) {
                   item={item}
                   onClick={() =>
                     navigate(
-                      item.restaurant_id
-                        ? `/restaurant/${item.restaurant_id}`
+                      item.type === 'restaurant'
+                        ? `/restaurant/${item.id}`
                         : `/dish/${item.id}`
                     )
                   }
@@ -719,7 +726,7 @@ function DetailModal({ item, onClose }) {
             {item.price && (
               <div>
                 <p className="font-semibold text-sm">価格</p>
-                <p className="text-blue-600 font-bold">¥{item.price}</p>
+                <p className="text-orange-600 font-bold">¥{item.price}</p>
               </div>
             )}
           </div>

@@ -49,7 +49,15 @@ export class FilterService {
       },
 
       include: {
-        restaurant: true,
+        restaurant: {
+          include: {
+            images: {
+              orderBy: {
+                display_order: 'asc',
+              },
+            },
+          },
+        },
         menu_images: true,
         flavors: {
           include: { flavor: true },
